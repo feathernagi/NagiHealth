@@ -21,6 +21,16 @@ public class MainActivity extends Activity {
     boolean loaded = false;
     String pendingAct = null;
     long lastUpdateCheck = 0;
+    android.webkit.ValueCallback<android.net.Uri[]> fileCb;
+
+    @Override protected void onActivityResult(int req, int res, Intent data) {
+        super.onActivityResult(req, res, data);
+        if (req == 77 && fileCb != null) {
+            android.net.Uri u = (res == RESULT_OK && data != null) ? data.getData() : null;
+            fileCb.onReceiveValue(u != null ? new android.net.Uri[]{u} : null);
+            fileCb = null;
+        }
+    }
 
     @Override protected void onCreate(Bundle b) {
         super.onCreate(b);
@@ -35,7 +45,17 @@ public class MainActivity extends Activity {
         s.setMediaPlaybackRequiresUserGesture(false);
         s.setAllowFileAccess(true);
         web.addJavascriptInterface(new Bridge(this), "Android");
-        web.setWebChromeClient(new WebChromeClient());
+        s.setAllowFileAccessFromFileURLs(true);
+        web.setWebChromeClient(new WebChromeClient() {
+            @Override public boolean onShowFileChooser(WebView v, android.webkit.ValueCallback<android.net.Uri[]> cb, FileChooserParams p) {
+                if (fileCb != null) fileCb.onReceiveValue(null);
+                fileCb = cb;
+                Intent pick = new Intent(Intent.ACTION_GET_CONTENT).addCategory(Intent.CATEGORY_OPENABLE).setType("image/*");
+                Intent chooser = Intent.createChooser(pick, "Фото прогресса");
+                try { startActivityForResult(chooser, 77); } catch (Exception e) { fileCb = null; return false; }
+                return true;
+            }
+        });
         web.setWebViewClient(new WebViewClient() {
             @Override public void onPageFinished(WebView v, String url) {
                 loaded = true;

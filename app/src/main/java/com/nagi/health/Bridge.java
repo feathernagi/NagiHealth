@@ -32,5 +32,23 @@ public class Bridge {
         a.runOnUiThread(() -> a.startActivity(Intent.createChooser(i, "Отправить отчёт Claude")));
     }
 
+    /** Фото прогресса: сохраняются в личную папку приложения */
+    @JavascriptInterface public void savePhoto(String key, String b64) {
+        try {
+            java.io.File d = new java.io.File(a.getFilesDir(), "photos"); d.mkdirs();
+            java.io.FileOutputStream o = new java.io.FileOutputStream(new java.io.File(d, key.replaceAll("[^\\w-]", "_") + ".jpg"));
+            o.write(android.util.Base64.decode(b64, android.util.Base64.DEFAULT)); o.close();
+        } catch (Exception ignored) {}
+    }
+    @JavascriptInterface public String photos() {
+        org.json.JSONArray arr = new org.json.JSONArray();
+        java.io.File[] fs = new java.io.File(a.getFilesDir(), "photos").listFiles();
+        if (fs != null) {
+            java.util.Arrays.sort(fs, (x, y) -> x.getName().compareTo(y.getName()));
+            for (java.io.File f : fs) try { arr.put(new org.json.JSONObject().put("key", f.getName()).put("path", "file://" + f.getAbsolutePath())); } catch (Exception ignored) {}
+        }
+        return arr.toString();
+    }
+
     @JavascriptInterface public void checkUpdate() { a.runOnUiThread(() -> Updater.check(a, true)); }
 }

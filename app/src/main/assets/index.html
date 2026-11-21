@@ -113,6 +113,8 @@ const POSE={
        F({front:1,hd:[60,14],sh:[60,29],hp:[60,61],kn:[50,85],an:[42,108],kn2:[64,85],an2:[65,108],el:[47,18],wr:[42,3],el2:[73,18],wr2:[78,3]})],
  stretch:[F({front:1,el:[56,14],wr:[58,-1],el2:[64,14],wr2:[62,-1],kn:[57,85],an:[56,108],kn2:[63,85],an2:[64,108]}),
           F({front:1,hd:[50,16],sh:[54,30],el:[44,15],wr:[36,3],el2:[52,14],wr2:[42,1],kn:[57,85],an:[56,108],kn2:[63,85],an2:[64,108]})],
+ wall:[F({front:1,kn:[57,85],an:[56,108],kn2:[63,85],an2:[64,108],el:[44,30],wr:[46,16],el2:[76,30],wr2:[74,16]}),F({front:1,kn:[57,85],an:[56,108],kn2:[63,85],an2:[64,108],el:[50,12],wr:[54,-2],el2:[70,12],wr2:[66,-2]})],
+ squeeze:[F({el:[70,40],wr:[84,40]}),F({el:[50,42],wr:[62,40]})],
  rest:[F({}),F({})]
 };
 const lerp=(a,b,t)=>a.map((v,i)=>v+(b[i]-v)*t);
@@ -142,7 +144,7 @@ function bodySvg(k,t){const P=POSE[k]||POSE.rest;let q=full(mix(full(P[0]),full(
  if(q.kb){const o=q.kbo||[0,8],c=[q.wr[0]+o[0],q.wr[1]+o[1]];s+=`<path d="M${c[0]-4.5} ${c[1]-3} Q${c[0]} ${c[1]-12} ${c[0]+4.5} ${c[1]-3}" stroke="#1d2a44" stroke-width="2.6" fill="none"/><circle cx="${c[0]}" cy="${c[1]+2}" r="7" fill="#1d2a44"/><circle cx="${c[0]-2}" cy="${c[1]}" r="2" fill="#4a6ba8"/>`}
  return s+'</svg>'}
 // ===== ЛИЦО: бюст с плавной анимацией =====
-function faceSvg(k,t){const e=t;let rot=0,tx=0;if(k==='chin')rot=-18*e;if(k==='neck')rot=20*e;
+function faceSvg(k,t){const e=t;let rot=0,tx=0;if(k==='chin')rot=-18*e;if(k==='neck')rot=20*e;if(k==='tuck')tx=-7*e;
  const SK='#f0c7a2';let mouth,eyes,brows='<path d="M37 41 Q43 38 48 41 M52 41 Q57 38 63 41" stroke="#3a2a1e" stroke-width="2.4" fill="none"/>',cheek='',jaw=0,extra='';
  eyes=`<ellipse cx="42.5" cy="48" rx="4" ry="${(2.6-(k==='eyes'?2.1*e:0)).toFixed(2)}" fill="#fff"/><ellipse cx="57.5" cy="48" rx="4" ry="${(2.6-(k==='eyes'?2.1*e:0)).toFixed(2)}" fill="#fff"/><circle cx="43" cy="48" r="${k==='eyes'?1.8-1.2*e:1.8}" fill="#2a1a10"/><circle cx="58" cy="48" r="${k==='eyes'?1.8-1.2*e:1.8}" fill="#2a1a10"/>`;
  mouth=`<path d="M43 70 Q50 72 57 70" stroke="#8a3b2e" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
@@ -154,7 +156,7 @@ function faceSvg(k,t){const e=t;let rot=0,tx=0;if(k==='chin')rot=-18*e;if(k==='n
  if(k==='tongue'){mouth=`<path d="M43 70 Q50 72 57 70" stroke="#8a3b2e" stroke-width="2.6" fill="none"/>`;extra=`<path d="M38 82 Q50 ${88-6*e} 62 82" stroke="#ff7a2f" stroke-width="2.4" fill="none" opacity="${.3+.7*e}"/><text x="66" y="92" font-size="7" fill="#ffb347" opacity="${e}">↑ к нёбу</text>`}
  const chinY=88+(k==='jaw'?2*e:0);
  return `<svg viewBox="0 0 100 116"><path d="M8 116 Q12 98 34 96 L66 96 Q88 98 92 116 Z" fill="#ff7a2f"/>
- <g transform="rotate(${rot} 50 100)"><rect x="40" y="78" width="20" height="22" fill="#e2b38f"/>
+ <g transform="translate(${tx} 0) rotate(${rot} 50 100)"><rect x="40" y="78" width="20" height="22" fill="#e2b38f"/>
  <path d="M22 54 Q22 18 50 16 Q78 18 78 54 Q78 76 ${62+jaw} ${chinY} Q50 ${96+jaw*.4} ${38} ${chinY} Q22 76 22 54Z" fill="${SK}"/>
  <path d="M22 50 Q20 14 50 12 Q80 14 78 50 Q74 26 50 24 Q28 26 22 50Z" fill="#3a2a1e"/>
  <ellipse cx="21" cy="54" rx="3.5" ry="7" fill="#e2b38f"/><ellipse cx="79" cy="54" rx="3.5" ry="7" fill="#e2b38f"/>
@@ -182,6 +184,10 @@ const EX={
  stretch:{n:"Растяжка",p:"stretch",t:"Потянись вверх, наклоны в стороны, дыши глубоко."},
  cool:{n:"Заминка",p:"stretch",t:"Медленно растяни ноги и спину. Молодец!"},
  // лицо и шея
+ p_wall:{n:"Ангелы у стены",p:"wall",t:"Спина, затылок и ягодицы прижаты к стене. Руки буквой W, медленно скользи вверх и вниз, не отрывая от стены."},
+ p_squeeze:{n:"Сведение лопаток",p:"squeeze",t:"Руки вперёд, потом локти назад, сведи лопатки и задержи 2 секунды. Плечи вниз, не к ушам."},
+ p_tuck:{n:"Подбородок назад",p:"tuck",face:1,t:"Не опуская голову, отведи подбородок назад — «двойной подбородок» на секунду. Держи 3 секунды. Ставит голову над плечами."},
+ p_chest:{n:"Растяжка груди",p:"stretch",t:"Руки в дверной проём или сцепи за спиной, грудь вперёд. Чувствуй растяжение грудных мышц."},
  f_chin:{n:"Подбородок к потолку",p:"chin",face:1,t:"Сидя прямо, запрокинь голову и тяни нижнюю губу вверх, будто целуешь потолок. Держи 5 секунд, расслабь."},
  f_neck:{n:"Наклоны шеи",p:"neck",face:1,t:"Медленно наклоняй голову к плечу, плечи вниз. Чувствуй растяжение боковой поверхности шеи.",sw:1},
  f_jaw:{n:"Челюсть вперёд",p:"jaw",face:1,t:"Выдвини нижнюю челюсть вперёд, губы сомкнуты, чувствуй напряжение под подбородком. 5 секунд и назад."},
@@ -192,7 +198,7 @@ const EX={
  f_eyes:{n:"Прищур",p:"eyes",face:1,t:"Указательными пальцами под глазами, мягко прищуривайся, не морща лоб."}
 };
 // ================= НАГРАДЫ: что получит мозг (оценки примерные, при регулярности) =================
-const REW={
+const REW={p_wall:["🧍 Раскрывает плечи и грудь","🛡 Снимает зажим верха спины","📏 Визуально +1–2 см роста","💪 Укрепляет мышцы между лопатками","🧠 Перезагрузка после экрана"],p_squeeze:["🧍 Против сутулости","💪 Сильная середина спины","🛡 Меньше боли в шее","👕 Футболка сидит лучше","🧠 Можно делать прямо за столом"],p_tuck:["🧍 Голова над плечами — меньше «шея вперёд»","📸 Ровнее профиль","🛡 Меньше головных болей напряжения","🧠 Делай на каждом созвоне","😎 Подбородок выглядит чётче сразу"],p_chest:["🧍 Плечи уходят назад","🫁 Легче дышать глубоко","🛡 Меньше зажима груди от клавиатуры","😎 Открытая уверенная поза","🧠 Расслабляет"],
  swing:["🔥 ~15 ккал в минуту — как 3 минуты бега в гору","🍑 Через 3 недели: +20–30% силы ягодиц и задней поверхности бедра","🫀 Сердце: через месяц пульс в покое ниже на 3–5 ударов","🧍 Осанка ровнее, поясница перестаёт ныть от сидения","🚀 Взрывная сила: прыжок выше и «лёгкие» ноги на лестнице"],
  goblet:["🦵 Через 2 недели: +3–5 повторов в приседе","🔥 Ноги — самые большие мышцы: больше мышц = больше калорий даже во сне","🦴 Крепче колени и тазобедренные суставы","🧠 Тренировка ног усиливает выброс гормонов роста и тестостерона","🏃 Через месяц: встаёшь с дивана и поднимаешься по лестнице без одышки"],
  squat:["🦵 20 приседаний ≈ подъём на 2 этажа пешком","🩸 Ускоряет кровоток после сидения — меньше тяжести в ногах","🔥 Снижает сахар в крови после еды","💪 Через 2 недели: +5 повторов","🧠 Бодрость: мозг получает больше крови и кислорода"],
@@ -208,7 +214,7 @@ const REW={
  halo:["🛡 Подвижные, здоровые плечи","🧍 Снимает зажим шеи после компьютера","💪 Стабилизирует кор","🔥 Отличная разминка верха","🧠 Тренирует координацию"],
  jack:["🔥 Сжигает ~10 ккал в минуту","🫀 Разгоняет пульс в зону жиросжигания","🤫 Тихо — соседи не жалуются","🦵 Укрепляет голеностоп","🧠 Мгновенная бодрость"],
  stretch:["🧘 Снимает зажимы спины и шеи","😴 Лучше сон","🩸 Расслабляет мышцы после нагрузки","🧍 Чуть выше рост — распрямляется позвоночник","🧠 Снижает уровень стресса"],
- f_chin:["😎 Чётче линия подбородка через 4–6 недель","⬇️ Уменьшает визуальный «второй подбородок»","🧍 Шея крепче и ровнее","🧠 Снимает напряжение от взгляда в экран","📸 Лучше выглядишь на фото в профиль"],
+ f_chin:["⬇️ Второй подбородок уходит с весом — упражнение добавляет тонус","🧍 Шея крепче, голова не «висит» вперёд","🧍 Шея крепче и ровнее","🧠 Снимает напряжение от взгляда в экран","📸 Лучше выглядишь на фото в профиль"],
  f_neck:["🧍 Минус боль в шее от компьютера","😎 Длинная, ровная шея","🛡 Меньше головных болей напряжения","🧠 Мягкая перезагрузка","😴 Легче засыпать"],
  f_jaw:["😎 Чётче угол челюсти","💪 Тонус мышц под подбородком","🧍 Помогает осанке головы","📸 Мужественный профиль","🧠 Упражнение можно делать незаметно на звонке"],
  f_tongue:["😎 Подтягивает зону под подбородком","🧍 Правильное положение языка улучшает осанку головы","😴 Сильнее мышцы горла — тише храп","🧠 Можно делать в любое время","📸 Профиль ровнее"],
@@ -217,13 +223,13 @@ const REW={
  f_smile:["😊 Открытая, уверенная улыбка","😎 Тонус нижней части лица","🧠 Улыбка, даже нарочная, поднимает настроение","🗣 Приятнее выглядишь на видеозвонках","🩸 Свежий цвет лица"],
  f_eyes:["👁 Тонус вокруг глаз","😎 Меньше «уставшего» взгляда","🧠 Отдых для глаз от экрана","🩸 Меньше отёков под глазами","😊 Лицо выглядит бодрее"]
 };
-const WREW={
+const WREW={posture:["🧍 Плечи разворачиваются, грудь раскрыта — выглядишь выше и стройнее","🛡 Меньше боли в шее и между лопатками","📸 Голова над плечами — профиль на фото ровнее","💪 Через 3–4 недели держать спину станет привычкой","😎 Уверенная осанка заметна раньше, чем минус 10 кг"],
  A:["🔥 ~350–400 ккал — как 40 минут бега","💪 Через 2 недели: +2–3 повтора в каждом упражнении","🧠 Эндорфины на 2–3 часа — лучшее настроение дня","⚖️ Мышцы сохраняются, уходит именно жир","🛌 Сон глубже ночью"],
  B:["🦵 Сильные ноги и спина — основа для бега и подтягиваний","🔥 ~350 ккал","🛡 Спина болит меньше","🍑 Подтянутая фигура через месяц","🧠 Ясная голова на работе"],
  C:["🔥 Интервалы ускоряют обмен веществ на 12–24 часа","🫀 Выносливость: через 3 недели меньше одышки","⏱ Максимум пользы за 30 минут","🧠 Сильнейший заряд энергии","⚖️ Лучшее для сжигания жира на животе"],
  desk:["🪑 Обнуляет вред от часа сидения","🔥 6 перерывов ≈ 100 ккал в день ≈ 1 кг жира за 2,5 месяца","🧠 Концентрация выше — работа быстрее","🩸 Меньше риск тромбов и отёков","💧 Заодно выпиваешь стакан воды"],
  eve:["🔥 ~150 ккал вечером","😴 Сон глубже","🧠 Сбрасывает стресс дня","🍽 Меньше тяга к вечерним перекусам","🫀 Здоровое сердце"],
- face:["😎 Через 4–6 недель: чётче овал лица и шея","📸 При похудении лицо подтягивается, а не «плывёт»","🧠 Расслабляет перед сном","🧍 Ровная осанка головы","😊 Уверенность в себе каждый день"]
+ face:["😎 Овал лица делает в первую очередь похудение — упражнения добавляют тонус","📸 Помогает, чтобы при похудении лицо выглядело подтянутым","🧠 Расслабляет перед сном","🧍 Ровная осанка головы","😊 Уверенность в себе каждый день"]
 };
 const MREW={water:"💧 Энергия +, голод −, кожа чище, обмен быстрее",protein:"💪 Мышцы сохраняются, сытость на 3–4 часа",weight:"📉 Видишь реальный прогресс — мозг любит цифры",desk:"🪑 Каждый перерыв ≈ 15–20 ккал и ясная голова"};
 const CARE={
@@ -242,7 +248,7 @@ const CARE={
   ["Бальзам для губ","Тонкий слой на ночь."],
   ["Зубы + нить","Нить каждый вечер — дёсны и свежее дыхание."],
   ["Экран прочь за 30 мин до сна","Сон — главный «крем»: кожа восстанавливается ночью, а недосып усиливает голод."]],
-  rew:["🌙 Кожа восстанавливается ночью в 2 раза активнее","😎 Ретинол через 8–12 недель: меньше пор и тонких морщин","🧼 Чистые поры — меньше воспалений","😴 Ритуал перед сном помогает засыпать","🍽 Хороший сон = меньше тяга к сладкому завтра"]}
+  rew:["🌙 Ночью кожа восстанавливается — крем работает лучше","😎 Ретинол через 8–12 недель: меньше пор и тонких морщин","🧼 Чистые поры — меньше воспалений","😴 Ритуал перед сном помогает засыпать","🍽 Хороший сон = меньше тяга к сладкому завтра"]}
 };
 function careView(w){const d=day();d.care=d.care||{};const c=d.care[w]||[];const R=CARE[w];
  $('careout').innerHTML=`<div class="card" style="background:#0f1219;margin-top:10px"><h2>${R.n}</h2><div class="mut">${R.t}</div>${R.steps.map((s,i)=>`<div class="mission ${c[i]?'done':''}" onclick="careTick('${w}',${i})"><div class="chk">${c[i]?'✓':''}</div><div><span>${s[0]}</span><div class="mut" style="font-size:13px">${s[1]}</div></div></div>`).join('')}${rewList(R.rew)}</div>`;$('careout').scrollIntoView({behavior:'smooth'})}
@@ -257,10 +263,11 @@ let W={
  C:{n:"Интервалы C",d:"30/30 · жиросжигание",rounds:4,warm:240,list:[["swing",30,30],["squat",30,30],["jack",30,30],["push",30,30],["march",30,60]]},
  desk:{n:"Перерыв 3 мин",d:"Каждый час 9–16",rounds:1,warm:0,list:[["squat",40,10],["march",40,10],["deskpush",30,10],["hinge",30,10],["stretch",30,0]]},
  eve:{n:"Вечер 15 мин",d:"Ходьба + махи",rounds:1,warm:0,list:[["march",300,15],["jack",120,15],["swing",30,40],["swing",30,40],["swing",30,40],["march",180,0],["stretch",60,0]]},
+ posture:{n:"Осанка 5 мин",d:"Против сутулости от компьютера",rounds:2,warm:0,list:[["p_wall",40,10],["p_squeeze",40,10],["p_tuck",30,10],["p_chest",40,10]]},
  face:{n:"Лицо и шея",d:"Фейсбилдинг · 6 мин",rounds:1,warm:0,list:[["f_chin",40,10],["f_neck",60,10],["f_jaw",40,10],["f_tongue",40,10],["f_vowel",40,10],["f_cheek",40,10],["f_smile",40,10],["f_eyes",30,0]]}
 };
 const DAYW={1:'A',3:'B',5:'C'};
-const XPV={A:60,B:60,C:60,desk:10,eve:30,face:15};
+const XPV={posture:15,A:60,B:60,C:60,desk:10,eve:30,face:15};
 
 // ================= ДАННЫЕ =================
 let db=null,DAYS={},STATE={level:0,why:""},sample=null,tts=null;
@@ -305,13 +312,16 @@ function applyCfg(c){if(!c)return;
  Object.keys(W).forEach(k=>W[k].list=W[k].list.filter(x=>EX[x[0]]));
  CARDS=c.cards||[];XM=c.missions||[];if(c.reminders)REM=c.reminders;if(c.melodies)Object.assign(MEL,c.melodies);TIPS=c.tips||null;}
 function todayCards(){const k=todayKey(),dw=new Date().getDay();return CARDS.filter(c=>(!c.date||c.date===k)&&(c.dow==null||[].concat(c.dow).includes(dw)))}
-function cardsHtml(){const cs=todayCards();if(!cs.length)return'';const seen=(day().seen||[]);
- return cs.map((c,i)=>`<div class="card coach"><h2>${c.emoji||'📌'} ${esc(c.title||'')}</h2><div style="line-height:1.45">${esc(c.text||'').replace(/\n/g,'<br>')}</div>${c.task?`<button onclick="${/^[\w'(),]+$/.test(c.task.action||'')?c.task.action:'go(\'home\')'};markCard('${esc(c.title)}')">${esc(c.task.label)}</button>`:''}</div>`).join('')}
+function cardsHtml(){const cs=todayCards();if(!cs.length)return'';const seen=(day().seen||[]),open=window.__open||{};
+ return cs.map((c,i)=>i>0&&!open[i]?`<div class="card coach" onclick="(window.__open=window.__open||{})[${i}]=1;render()"><div class="row"><b>${c.emoji||'📌'} ${esc(c.title||'')}</b><span class="mut" style="flex:none">открыть ▾</span></div></div>`:`<div class="card coach"><h2>${c.emoji||'📌'} ${esc(c.title||'')}</h2><div style="line-height:1.45">${esc(c.text||'').replace(/\n/g,'<br>')}</div>${c.task?`<button onclick="${/^[\w'(),]+$/.test(c.task.action||'')?c.task.action:'go(\'home\')'};markCard('${esc(c.title)}')">${esc(c.task.label)}</button>`:''}</div>`).join('')}
 function markCard(t){const d=day();d.seen=d.seen||[];if(!d.seen.includes(t)){d.seen.push(t);saveDay()}}
 function xmTick(i){const d=day();d.xm=d.xm||{};d.xm[i]=!d.xm[i];saveDay();render()}
 function dayActive(d){return d&&((d.done||[]).length||d.water>=1000||(d.foods||[]).length)}
-function streak(){let n=0;const d=new Date();if(!dayActive(DAYS[todayKey()]))d.setDate(d.getDate()-1);
- for(;;){const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');if(dayActive(DAYS[k])){n++;d.setDate(d.getDate()-1)}else break}return n}
+// Мягкая серия: один пропущенный день подряд серию не обнуляет («не пропускай два дня подряд»)
+function streak(){let n=0,miss=0;const d=new Date();if(!dayActive(DAYS[todayKey()]))d.setDate(d.getDate()-1);
+ for(let i=0;i<2000;i++){const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  if(dayActive(DAYS[k])){n++;miss=0}else{miss++;if(miss>1||!Object.keys(DAYS).some(x=>x<k))break}d.setDate(d.getDate()-1)}return n}
+function missedYesterday(){const d=new Date();d.setDate(d.getDate()-1);const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');return Object.keys(DAYS).some(x=>x<k)&&!dayActive(DAYS[k])&&!dayActive(DAYS[todayKey()])}
 function totalXP(){let x=0;Object.values(DAYS).forEach(d=>{(d.done||[]).forEach(w=>x+=XPV[w.k]||10);x+=Math.floor((d.water||0)/CFG.glass)*2;x+=(d.foods||[]).length*3;['am','pm'].forEach(w=>{const c=(d.care||{})[w]||[];if(CARE[w].steps.every((_,j)=>c[j]))x+=5});if(d.weight)x+=10;});return x}
 const RANKS=["Новичок","Ученик","Боец","Воин","Атлет","Машина","Легенда"];
 function lvl(){const x=totalXP();const L=Math.floor(Math.sqrt(x/50));return{L,x,cur:50*L*L,next:50*(L+1)*(L+1),rank:RANKS[Math.min(RANKS.length-1,Math.floor(L/3))]}}
@@ -330,7 +340,7 @@ function missions(){const d=day(),dow=new Date().getDay(),m=[];
  m.unshift(["Уход утром",careDone('am'),"careView('am')",CARE.am.rew[0]]);m.push(["Уход вечером",careDone('pm'),"careView('pm')",CARE.pm.rew[0]]);
  m.push([`Вода: ${d.water}/${CFG.water} мл`,d.water>=CFG.water,"addWater()",MREW.water]);
  const p=(d.foods||[]).reduce((a,f)=>a+(+f.p||0),0);if(!isFast())m.push([`Белок: ${Math.round(p)}/${CFG.protein} г`,p>=CFG.protein,"go('food')",MREW.protein]);
- if(!isFast())m.push(["Вечер 15 мин",has('eve'),"start('eve')",WREW.eve[0]]);m.push(["Лицо и шея",has('face'),"start('face')",WREW.face[0]]);
+ if(!isFast())m.push(["Вечер 15 мин",has('eve'),"start('eve')",WREW.eve[0]]);m.push(["Осанка 5 мин",has('posture'),"start('posture')",WREW.posture[0]]);m.push(["Лицо и шея",has('face'),"start('face')",WREW.face[0]]);
  if(dow===1||dow===4)m.push(["Взвешивание",!!d.weight,"go('prog')",MREW.weight]);
  XM.forEach((x,i)=>{if(x.dow==null||[].concat(x.dow).includes(dow))m.push([esc(x.label),!!(d.xm||{})[i],`xmTick(${i})`,esc(x.rew||'')])});return m}
 function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(e._t);e._t=setTimeout(()=>e.style.display='none',2200)}
@@ -401,13 +411,15 @@ function report(){const ks=Object.keys(DAYS).sort().slice(-7);let t=`Отчёт 
   t+=`${k}: ${d.weight?'вес '+d.weight+', ':''}вода ${d.water} мл, ${Math.round(kc)} ккал/${Math.round(p)} г белка, сделано: ${(d.done||[]).map(w=>w.k+(w.fb!=null?'('+(w.fb>0?'легко':w.fb<0?'тяжело':'норм')+')':'')).join(', ')||'—'}\n`});
  Android.share(t)}
 // Простая база продуктов на 100 г: [ккал, белок]
-const QUICK=[['🥣 Овсянка 60 г','овсянка сухая',60],['🧀 Творог 200 г','творог 5%',200],['🥚 2 яйца','яйцо (1 шт ~55 г)',110],['🥛 Казеин 30 г','казеин (порошок)',30],['🥛 Молоко 200 мл','молоко 2.5%',200],['🍚 Гречка 70 г','гречка сухая',70],['🫘 Чечевица 70 г','чечевица сухая',70],['🍄 Грибы 200 г','грибы шампиньоны',200],['🥗 Овощи 300 г','овощи свежие',300],['🥄 Масло 10 г','масло растительное',10],['🌱 Чиа 15 г','семена чиа',15],['🍌 Банан','банан',120]];
+const CHEAT=[['🍕 Кусок пиццы',300],['🍫 Шоколадка 100 г',540],['🍪 Печенье 5 шт',400],['🛵 Доставка',1200],['🍰 Кусок торта',450],['🍟 Чипсы пачка',530]];
+function cheat(i){const[n,k]=CHEAT[i];day().foods.push({name:n,g:0,kcal:k,p:k/40,cheat:1});saveDay();const d=day(),kc=d.foods.reduce((a,f)=>a+(+f.kcal||0),0);toast(kc>CFG.kcal?'Записано. Завтра — с чистого листа 💪':`Записано. Осталось ${Math.round(CFG.kcal-kc)} ккал — вполне ок`);render()}
+const QUICK=[['🥣 Овсянка 60 г','овсянка сухая',60],['🧀 Творог 200 г','творог 5%',200],['🥚 2 яйца','яйцо (1 шт ~55 г)',110],['🥛 Казеин 30 г','казеин (порошок)',30],['🥛 Молоко 200 мл','молоко 2.5%',200],['🍚 Гречка 70 г','гречка сухая',70],['🫘 Чечевица 70 г','чечевица сухая',70],['🍄 Грибы 200 г','грибы шампиньоны',200],['🥗 Овощи 300 г','овощи свежие',300],['🥄 Масло 10 г','масло растительное',10],['🌱 Чиа 15 г','семена чиа',15],['🍌 Банан','банан',120],['🍲 Суп овощной 500 г','суп овощной',500],['🥘 Рагу с чечевицей 400 г','рагу с чечевицей',400],['🍳 Омлет 3 яйца + овощи','омлет с овощами',250],['🫙 Творог + ягоды','творог с ягодами',250],['🍿 Попкорн 30 г','попкорн',30]];
 function quickPortion(i){const[l,n,g]=QUICK[i],f=FOODDB[n];day().foods.push({name:n,g,kcal:f[0]*g/100,p:f[1]*g/100});saveDay();toast('+'+Math.round(f[0]*g/100)+' ккал · '+Math.round(f[1]*g/100)+' г белка');render()}
 const FOODDB={"овсянка сухая":[370,13],"гречка сухая":[340,13],"рис сухой":[350,7],"чечевица сухая":[330,24],"нут сухой":[360,19],"фасоль консерв.":[90,6],
  "творог 5%":[121,17],"творог 9%":[159,17],"творог 0%":[71,16],"яйцо (1 шт ~55 г)":[143,13],"греческий йогурт 2%":[66,9],"кефир 1%":[40,3],"молоко 2.5%":[52,3],
  "сыр твёрдый":[350,25],"моцарелла":[280,22],"тофу":[120,13],"казеин (порошок)":[360,80],"сывороточный протеин":[380,75],"семена чиа":[490,17],
  "грибы шампиньоны":[27,4],"овощи свежие":[25,1],"овощная смесь зам.":[40,2],"картофель":[77,2],"банан":[90,1],"яблоко":[52,0],"ягоды":[45,1],
- "хлеб цельнозерновой":[245,9],"орехи":[600,18],"арахисовая паста":[590,25],"масло растительное":[899,0],"масло сливочное":[748,1],"мёд":[320,0],"шоколад тёмный":[540,6],"макароны сухие":[350,12]};
+ "хлеб цельнозерновой":[245,9],"орехи":[600,18],"арахисовая паста":[590,25],"масло растительное":[899,0],"масло сливочное":[748,1],"мёд":[320,0],"шоколад тёмный":[540,6],"макароны сухие":[350,12],"суп овощной":[35,1.5],"рагу с чечевицей":[95,6],"омлет с овощами":[120,9],"творог с ягодами":[105,13],"попкорн":[380,12]};
 function addFoodLocal(){const n=$('fdb').value.trim(),g=+$('fg').value;const f=FOODDB[n];if(!f||!g){toast('Выбери продукт и вес');return}
  day().foods.push({name:n,g,kcal:f[0]*g/100,p:f[1]*g/100});saveDay();toast(`+${Math.round(f[0]*g/100)} ккал`);render()}
 
@@ -416,29 +428,51 @@ const $=id=>document.getElementById(id);let TAB='home';
 function go(t){TAB=t;if(location.hash==='#today')history.replaceState(null,'',location.pathname+location.search);render();scrollTo(0,0)}
 function nav(){$('nav').innerHTML=[['home','🏠','Сегодня'],['train','💪','Тренировки'],['food','🥗','Еда'],['prog','📈','Прогресс']].map(([k,i,n])=>`<button class="${TAB===k?'on':''}" onclick="go('${k}')"><b>${i}</b>${n}</button>`).join('')}
 function ring(p,txt){const r=40,c=2*Math.PI*r;return `<svg class="ring" viewBox="0 0 96 96"><circle cx="48" cy="48" r="${r}" stroke="#232838" stroke-width="9" fill="none"/><circle cx="48" cy="48" r="${r}" stroke="url(#g)" stroke-width="9" fill="none" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${c*(1-Math.min(1,p))}" transform="rotate(-90 48 48)"/><defs><linearGradient id="g"><stop offset="0" stop-color="#ff7a2f"/><stop offset="1" stop-color="#ffb347"/></linearGradient></defs><text x="48" y="54" text-anchor="middle" fill="#f1f3f8" font-size="18" font-weight="800">${txt}</text></svg>`}
-function home(){const w=curW(),lost=CFG.start-w,need=CFG.start-CFG.goal,l=lvl(),s=streak(),m=missions(),d=day();
+function home(){const w=curW(),lost=CFG.start-w,need=CFG.start-CFG.goal,ms=(()=>{const st=Math.floor(lost/5)*5,t=Math.max(CFG.goal,CFG.start-st-5);return{target:t,p:Math.max(0,(lost-st)/5)}})(),l=lvl(),s=streak(),m=missions(),d=day();
  const kc=(d.foods||[]).reduce((a,f)=>a+(+f.kcal||0),0);
  return `<div class="row" style="margin-bottom:10px"><div><h1>Привет, чемпион 👊</h1><div class="mut">${new Date().toLocaleDateString('ru-RU',{weekday:'long',day:'numeric',month:'long'})}</div></div><div style="flex:none;text-align:right"><div class="big">🔥${s}</div><div class="mut">дней подряд</div></div></div>
- <div class="card"><div class="hero">${ring(lost/need,(lost>0?'−':'')+lost.toFixed(1))}<div><div class="mut">Путь ${CFG.start} → ${CFG.goal} кг</div><div class="big">${w} кг</div><div class="mut">осталось ${(w-CFG.goal).toFixed(1)} кг · ${Math.round(100*lost/need)}%</div></div></div>
- <div style="margin-top:12px" class="row"><div><b>Ур. ${l.L} · ${l.rank}</b><div class="bar"><i style="width:${100*(l.x-l.cur)/(l.next-l.cur)}%"></i></div></div><div style="flex:none" class="mut">${l.x} XP</div></div></div>
- <div class="card"><div class="row"><h2 style="margin:0">🎯 Миссии на сегодня</h2><div style="flex:none" class="mut">${m.filter(x=>x[1]).length}/${m.length}</div></div><div class="bar"><i style="width:${m.length?100*m.filter(x=>x[1]).length/m.length:0}%;background:var(--ok)"></i></div>${m.map(x=>`<div class="mission ${x[1]?'done':''}" onclick="${x[2]}"><div class="chk">${x[1]?'✓':''}</div><div><span>${x[0]}</span><div class="mut" style="font-size:13px">🎁 ${x[3]}</div></div></div>`).join('')}<div id="careout"></div></div>
+ <div class="card"><div class="hero">${ring(ms.p,lost>0?'−'+lost.toFixed(1):'🚀')}<div><div class="mut">Ближайшая цель</div><div class="big">${ms.target} кг</div><div class="mut">${lost>0?`уже −${lost.toFixed(1)} кг · до цели ${(w-ms.target).toFixed(1)} кг`:'Старт! Первая цель — минус 5 кг'}</div><div class="mut" style="font-size:12px">Большая цель ${CFG.goal} кг</div></div></div>
+ <div style="margin-top:12px" class="row"><div><b>${l.x?`Ур. ${l.L} · ${l.rank}`:'Сделай первую миссию — получишь XP'}</b><div class="bar"><i style="width:${100*(l.x-l.cur)/(l.next-l.cur)}%"></i></div></div><div style="flex:none" class="mut">${l.x} XP</div></div></div>
+ ${missedYesterday()?`<div class="card coach"><h2>👋 С возвращением</h2><div>Вчера пропустил — это нормально, серия жива. Главное правило: не пропускать два дня подряд. Сделай сегодня хоть одну миссию.</div></div>`:''}
+ ${nowCard(m)}
+ <div class="card"><div class="row"><h2 style="margin:0">🎯 Миссии на сегодня</h2><div style="flex:none" class="mut">${m.filter(x=>x[1]).length}/${m.length}</div></div><div class="bar"><i style="width:${m.length?100*m.filter(x=>x[1]).length/m.length:0}%;background:var(--ok)"></i></div>${(STATE.full?m:m.slice(0,4)).map(x=>`<div class="mission ${x[1]?'done':''}" onclick="${x[2]}"><div class="chk">${x[1]?'✓':''}</div><div><span>${x[0]}</span><div class="mut" style="font-size:13px">🎁 ${x[3]}</div></div></div>`).join('')}${m.length>4?`<div class="mut" style="padding-top:10px;text-align:center" onclick="STATE.full=!STATE.full;saveState();render()">${STATE.full?'Свернуть ▴':`Ещё ${m.length-4} ▾ (по желанию)`}</div>`:''}<div id="careout"></div></div>
  ${cardsHtml()}
  <div class="card"><div class="row"><h2 style="margin:0">💧 Вода</h2><div style="flex:none" class="mut">${d.water} / ${CFG.water} мл</div></div>
  <div class="water">${Array.from({length:Math.ceil(CFG.water/CFG.glass)},(_,i)=>`<span class="drop ${i<d.water/CFG.glass?'f':''}">💧</span>`).join('')}</div>
  <div class="row"><button onclick="addWater()">+ стакан ${CFG.glass} мл</button><button class="sec" style="flex:none;width:auto" onclick="addWater(-1)">−</button></div></div>
  ${isFast()?`<div class="card"><h2>🕊 День без еды</h2><div class="mut">Ужин в 19:00. Держись — каждый час без еды работает на тебя.</div></div>`:`<div class="card"><div class="row"><h2 style="margin:0">🍽 Калории</h2><div style="flex:none" class="mut">${Math.round(kc)} / ${CFG.kcal} · осталось ${Math.max(0,Math.round(CFG.kcal-kc))}</div></div><div class="bar"><i style="width:${Math.min(100,100*kc/CFG.kcal)}%;${kc>CFG.kcal?'background:var(--bad)':''}"></i></div><button class="sec" onclick="go('food')">Записать еду</button></div>`}
  <div class="card coach"><h2>💬 Тренер Claude</h2><div style="line-height:1.45">${CFG.msg}</div>${STATE.why?`<div class="mut" style="margin-top:8px">Твоё «зачем»: <b style="color:var(--fg)">${esc(STATE.why)}</b></div>`:`<button class="sec" onclick="go('prog')">❤️ Вписать своё «зачем»</button>`}
- ${sample?`<button class="sec" onclick="sos()">😩 Нет сил / хочу сорваться</button><div class="chat" id="sosout"></div>`:`<button class="sec" onclick="sosLocal()">😩 Нет сил / хочу сорваться</button><div class="chat" id="sosout"></div>`}</div>
+ ${sample?`<button class="sec" onclick="sos()">😩 Нет сил / хочу сорваться</button><div class="chat" id="sosout"></div>`:`<div class="row"><button class="sec" onclick="crave()">🍩 Тянет поесть</button><button class="sec" onclick="sosLocal()">😩 Нет сил</button></div><div class="chat" id="sosout"></div>`}</div>
  ${remCard()}
  <div class="card"><h2>🗓 Сегодня по плану</h2><table>${todayPlan().map(r=>`<tr style="${r.past?'opacity:.45':''}"><td class="mut" style="width:60px">${r.t}</td><td>${REMICON[r.type]||'🔔'} ${esc(r.text)}</td></tr>`).join('')}</table></div>`}
+function nowCard(m){const n=m.find(x=>!x[1]);if(!n)return `<div class="card today"><h2>🏆 Все миссии выполнены!</h2><div class="mut">Ты сделал сегодня всё. Отдыхай с чистой совестью.</div></div>`;
+ return `<div class="card today"><div class="mut">Сделай сейчас</div><div class="big" style="font-size:22px;margin:4px 0">${n[0]}</div><div class="mut">🎁 ${n[3]}</div><button onclick="${n[2]}">Сделать</button></div>`}
+function addMeas(){const w=+$('mw').value,n=+$('mn').value;if(!w&&!n)return;day().meas={w:w||null,n:n||null};saveDay();toast('Замеры сохранены');render()}
+function craveStats(){const all=[];Object.values(DAYS).forEach(d=>(d.crave||[]).forEach(c=>all.push(c)));if(!all.length)return'';const won=all.filter(c=>c.ok).length,late=all.filter(c=>c.t>='21:00').length,by={};all.forEach(c=>by[c.k]=(by[c.k]||0)+1);const top=Object.keys(by).sort((a,b)=>by[b]-by[a])[0];
+ return `<div class="card"><h2>🍩 Тяга к еде</h2><div class="pill">Побед: ${won}/${all.length}</div><div class="pill">Чаще всего: ${CRAVE[top].n}</div><div class="pill">После 21:00: ${Math.round(100*late/all.length)}%</div>${late/all.length>.5?'<div class="mut" style="margin-top:6px">Большинство тяги — вечером. Оставляй 300 ккал на вечерний перекус: творог с ягодами или попкорн.</div>':''}</div>`}
+let PHOTOS=[];function loadPhotos(){try{PHOTOS=JSON.parse(Android.photos())}catch(e){PHOTOS=[]}}
+function addPhoto(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const sc=Math.min(1,900/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*sc;c.height=im.height*sc;c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+ Android.savePhoto(todayKey()+'_'+Date.now(),c.toDataURL('image/jpeg',.85).split(',')[1]);loadPhotos();toast('📸 Фото сохранено');render()};im.src=r.result};r.readAsDataURL(f)}
+function photoCompare(){if(!PHOTOS.length)loadPhotos();if(!PHOTOS.length)return '<div class="mut" style="margin-top:6px">Пока нет фото. Сделай первое — через месяц будешь рад, что сделал.</div>';
+ const a=PHOTOS[0],b=PHOTOS[PHOTOS.length-1];return `<div class="row" style="margin-top:8px;align-items:flex-start"><div><div class="mut">Было · ${a.key.slice(0,10)}</div><img src="${a.path}" style="width:100%;border-radius:12px"></div><div><div class="mut">Стало · ${b.key.slice(0,10)}</div><img src="${b.path}" style="width:100%;border-radius:12px"></div></div><div class="mut">Всего фото: ${PHOTOS.length}</div>`}
 function todayPlan(){const d=new Date(),dw=d.getDay(),now=d.getHours()*60+d.getMinutes();return REM.filter(r=>remOn(r)).map(r=>{const[h,mm]=r.t.split(':').map(Number);return Object.assign({past:h*60+mm<now,_m:h*60+mm},r)}).sort((a,b)=>a._m-b._m)}
 const isFast=()=>(CFG.fastDow||[0]).includes(new Date().getDay())&&todayKey()>=(CFG.fastFrom||'');
+const CRAVE={hunger:{n:"🍽 Настоящий голод",a:["Съешь белок + объём: творог 200 г с огурцом, или 2 яйца с овощами, или большая тарелка супа.","Сначала стакан воды, потом еда — медленно, 15 минут."]},
+ stress:{n:"😤 Стресс / нервы",a:["10 махов гирей или 20 приседаний — снимет напряжение быстрее еды.","Горячий чай и 10 медленных вдохов: вдох 4 сек, выдох 6 сек.","Выйди на балкон или умойся холодной водой."]},
+ bored:{n:"😐 Скука / привычка",a:["Займи руки: 3-минутный перерыв в приложении или уход за лицом.","Почисти зубы — после этого есть почти не хочется.","Стакан воды и подожди 10 минут — тяга волной уходит."]},
+ tired:{n:"😴 Усталость",a:["Еда не восполнит сон. Чай без сахара и ляг на 20 минут или пораньше сегодня.","Если голоден — белок, не сладкое: йогурт или творог."]}};
+let craveT=null;
+function crave(){$('sosout').innerHTML=`<div style="margin-top:8px"><b>Что сейчас?</b></div>${Object.keys(CRAVE).map(k=>`<button class="sec" onclick="crave2('${k}')">${CRAVE[k].n}</button>`).join('')}`}
+function crave2(k){const c=CRAVE[k],d=day();d.crave=d.crave||[];d.crave.push({k,t:new Date().toTimeString().slice(0,5)});saveDay();let left=600;
+ $('sosout').innerHTML=`<div style="margin-top:8px;line-height:1.5">${c.a.map(x=>'• '+x).join('<br>')}</div><div class="time" id="crt" style="font-size:44px;margin-top:10px">10:00</div><div class="mut" style="text-align:center">Тяга обычно проходит за 10–20 минут</div><div class="row"><button onclick="craveEnd(1)">✅ Прошло</button><button class="sec" onclick="craveEnd(0)">Съел — и это ок</button></div>`;
+ clearInterval(craveT);craveT=setInterval(()=>{left--;const e=$('crt');if(!e||left<0){clearInterval(craveT);if(left<0)melody('care');return}e.textContent=Math.floor(left/60)+':'+String(left%60).padStart(2,'0')},1000)}
+function craveEnd(ok){clearInterval(craveT);const d=day(),c=d.crave[d.crave.length-1];if(c)c.ok=!!ok;saveDay();$('sosout').innerHTML=ok?'<div style="margin-top:8px">💪 Ты победил тягу! Это навык — каждый раз он сильнее.</div>':'<div style="margin-top:8px">Нормально. Запиши что съел во вкладке Еда — честный учёт важнее идеала. Серия не сгорает.</div>';if(!ok)setTimeout(()=>go('food'),1500)}
 const SOS=["Это просто волна. Голод и лень проходят за 15–20 минут — выпей стакан воды и сделай 3-минутный перерыв.","Ты не обязан сегодня быть идеальным. Сделай одну самую маленькую миссию — и серия не прервётся.","Вспомни своё «зачем». Через месяц ты будешь благодарен себе за этот вечер.","Срыв — это одна еда, а не неделя. Запиши что съел и продолжай со следующего приёма пищи.","Устал? Тогда сегодня — лёгкий вариант: вода, лицо и шея, уход. Этого достаточно, чтобы остаться в игре."];
 function sosLocal(){const o=$('sosout');o.textContent=SOS[Math.floor(Math.random()*SOS.length)]+(STATE.why?`\n\nТвоё «зачем»: ${STATE.why}`:'')+`\n\nУже позади: −${(CFG.start-curW()).toFixed(1)} кг, серия 🔥${streak()}.`}
 function train(){const td=DAYW[new Date().getDay()];const lv=STATE.level||0;
  let h=`<h1>💪 Тренировки</h1><div class="mut" style="margin-bottom:10px">Уровень нагрузки: <b style="color:var(--fg)">${lv>=0?'+':''}${lv}</b> · растёт сам после тренировок с оценкой «легко»</div>`;
  h+=`<div class="card"><h2>⏱ Как это работает</h2><div class="mut" style="line-height:1.45">Нажми «Начать» — пойдёт таймер с анимированной картинкой и звуковыми сигналами: 3 коротких писка перед концом, длинный при смене. Или выбери любое упражнение внизу и задай свои подходы.</div></div>`;
- ['A','B','C','desk','eve','face'].forEach(k=>{const w=W[k];if(!w)return;const lib=[...new Set(w.list.map(x=>x[0]))];
+ ['A','B','C','desk','eve','posture','face'].forEach(k=>{const w=W[k];if(!w)return;const lib=[...new Set(w.list.map(x=>x[0]))];
   h+=`<div class="card ${k===td?'today':''}"><h2>${k===td?'⭐ Сегодня · ':''}${w.n}</h2><div class="mut">${w.d} · ~${mins(k)} мин · +${XPV[k]||10} XP</div>
   <div style="margin:6px 0">${lib.map(x=>`<span class="pill">${EX[x].n}</span>`).join('')}</div>${rewList(WREW[k])}
   <div class="row"><button onclick="start('${k}')">Начать</button>${w.rounds>1?`<button class="sec" onclick="start('${k}',1)">Лёгкий</button>`:''}</div></div>`;});
@@ -453,7 +487,7 @@ function food(){const d=day();const kc=d.foods.reduce((a,f)=>a+(+f.kcal||0),0),p
  <div class="card"><div class="row"><div><div class="mut">Калории</div><div class="big">${Math.round(kc)}<span class="mut" style="font-size:16px"> / ${CFG.kcal}</span></div></div><div><div class="mut">Белок</div><div class="big">${Math.round(p)}<span class="mut" style="font-size:16px"> / ${CFG.protein} г</span></div></div></div>
  <div class="bar"><i style="width:${Math.min(100,100*kc/CFG.kcal)}%;${kc>CFG.kcal?'background:var(--bad)':''}"></i></div><div class="bar"><i style="width:${Math.min(100,100*p/CFG.protein)}%;background:var(--ok)"></i></div>
  <div class="mut" style="margin-top:6px">${kc>CFG.kcal?'Лимит превышен — не страшно, завтра ровнее.':`Осталось ${Math.round(CFG.kcal-kc)} ккал · белка ${Math.max(0,Math.round(CFG.protein-p))} г`}</div></div>
- <div class="card"><h2>➕ Добавить</h2>${sample?`<div class="mut">Взвесь на весах и напиши как есть, например: «овсянка сухая 60 г, молоко 200 мл, казеин 30 г»</div><textarea id="fin" rows="2" placeholder="что и сколько грамм"></textarea>`:`<div class="mut">Быстрые порции:</div>${QUICK.map((q,i)=>`<button class="sec sm" onclick="quickPortion(${i})">${q[0]}</button>`).join('')}<input id="fin" type="hidden">`}
+ <div class="card"><h2>➕ Добавить</h2>${sample?`<div class="mut">Взвесь на весах и напиши как есть, например: «овсянка сухая 60 г, молоко 200 мл, казеин 30 г»</div><textarea id="fin" rows="2" placeholder="что и сколько грамм"></textarea>`:`<div class="mut">Быстрые порции:</div>${QUICK.map((q,i)=>`<button class="sec sm" onclick="quickPortion(${i})">${q[0]}</button>`).join('')}<div class="mut" style="margin-top:10px">Сорвался? Запиши честно — без чувства вины, серия не сгорает:</div>${CHEAT.map((q,i)=>`<button class="sec sm" onclick="cheat(${i})">${q[0]} ~${q[1]}</button>`).join('')}<input id="fin" type="hidden">`}
  ${sample?`<button onclick="addFood()" id="fbtn">🤖 Посчитать и записать</button>`:`<div class="mut" style="margin-top:8px">Продукт из базы + вес на весах:</div><input id="fdb" list="fdbl" placeholder="начни вводить: творог, гречка…"><datalist id="fdbl">${Object.keys(FOODDB).map(k=>`<option value="${k}">`).join('')}</datalist><div class="row"><input id="fg" type="number" inputmode="decimal" placeholder="грамм"><button style="flex:none;width:auto;margin:0" onclick="addFoodLocal()">Добавить</button></div><div class="mut" style="margin-top:10px">Нет в базе — введи вручную:</div><input id="fname" placeholder="название" style="margin-bottom:6px"><div class="row"><input id="fk" placeholder="ккал" type="number"><input id="fp" placeholder="белок г" type="number"></div><button onclick="addFoodManual()">Записать</button>`}
  ${favs.length?`<div class="mut" style="margin-top:10px">Частое — одним нажатием:</div>${favs.map((f,i)=>`<button class="sec sm" onclick='quickFood(${JSON.stringify({name:f.name,g:f.g,kcal:f.kcal,p:f.p})})'>${esc(f.name)} ${f.g}г</button>`).join('')}`:''}</div>
  <div class="card"><h2>Сегодня</h2>${d.foods.length?`<table>${d.foods.map((f,i)=>`<tr><td>${esc(f.name)} <span class="mut">${f.g} г</span></td><td style="text-align:right">${Math.round(f.kcal)} ккал · ${Math.round(f.p)} б <span onclick="delFood(${i})" style="color:var(--bad);padding-left:8px">✕</span></td></tr>`).join('')}</table>`:'<div class="mut">Пока пусто</div>'}</div>
@@ -468,6 +502,11 @@ function prog(){const ws=weights(),l=lvl(),b=BADGES();
  return `<h1>📈 Прогресс</h1><div class="card"><div class="row"><div><div class="mut">Средний вес (посл. записи)</div><div class="big">${avg(last7)}</div></div><div><div class="mut">Было до этого</div><div class="big">${avg(prev7)}</div></div></div><div class="mut" style="margin-top:6px">Вес скачет на 0,5–1,5 кг из-за воды и соли — смотри на среднее, а не на один день.</div></div>
  <div class="card"><h2>⚖️ Вес</h2><div class="row"><input id="w" type="number" step="0.1" inputmode="decimal" placeholder="кг натощак"><button style="flex:none;width:auto;margin:0" onclick="addW()">Записать</button></div>${chart}
  <table>${ws.slice(-8).reverse().map(x=>`<tr><td class="mut">${x[0]}</td><td style="text-align:right"><b>${x[1]} кг</b></td></tr>`).join('')||`<tr><td class="mut">Старт</td><td style="text-align:right"><b>${CFG.start} кг</b></td></tr>`}</table></div>
+ <div class="card"><h2>📸 Фото «было / стало»</h2><div class="mut">Раз в неделю: анфас и профиль, при одном свете и с одного места. Вес — это цифра, фото — то, что видят люди.</div>
+ ${IS_APP?`<input type="file" accept="image/*" id="ph" style="display:none" onchange="addPhoto(this)"><button class="sec" onclick="$('ph').click()">➕ Добавить фото</button>${photoCompare()}`:'<div class="mut">Доступно в приложении для Android.</div>'}</div>
+ <div class="card"><h2>📏 Замеры</h2><div class="row"><input id="mw" type="number" inputmode="decimal" placeholder="талия, см"><input id="mn" type="number" inputmode="decimal" placeholder="шея, см"><button style="flex:none;width:auto;margin:0" onclick="addMeas()">OK</button></div>
+ <table>${Object.keys(DAYS).sort().filter(k=>DAYS[k].meas).slice(-5).reverse().map(k=>`<tr><td class="mut">${k}</td><td style="text-align:right">талия <b>${DAYS[k].meas.w||'—'}</b> · шея <b>${DAYS[k].meas.n||'—'}</b></td></tr>`).join('')}</table></div>
+ ${craveStats()}
  <div class="card"><h2>🏅 Достижения ${b.filter(x=>x[2]).length}/${b.length}</h2>${b.map(x=>`<div class="badge ${x[2]?'got':''}"><b>${x[0]}</b>${x[1]}</div>`).join('')}</div>
  <div class="card"><h2>📊 Итого</h2><div class="pill">Тренировок: ${countDone(['A','B','C'])}</div><div class="pill">Перерывов: ${countDone(['desk'])}</div><div class="pill">Лицо: ${countDone(['face'])}</div><div class="pill">Уровень ${l.L} · ${l.x} XP</div><div class="pill">Лучшая серия: ${streak()} дн</div></div>
  ${IS_APP?`<div class="card"><h2>📤 Отчёт для Claude</h2><div class="mut">Отправь в чат Claude — я разберу неделю и поправлю программу.</div><button onclick="report()">Отправить отчёт</button><button class="sec" onclick="Android.checkUpdate()">Проверить обновления · версия 1.${Android.version()}</button></div>`:''}<div class="card"><h2>❤️ Моё «зачем»</h2><div class="mut">Ради чего ты это делаешь? Это будет на главном экране.</div><textarea id="why" rows="2">${esc(STATE.why||'')}</textarea><button class="sec" onclick="STATE.why=$('why').value;saveState();toast('Сохранено')">Сохранить</button></div>`}
