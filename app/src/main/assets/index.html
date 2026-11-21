@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NagiHealth</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b0d12;--card:#151922;--card2:#1c2130;--fg:#f1f3f8;--mut:#8e96a8;--acc:#ff7a2f;--acc2:#ffb347;--ok:#35d49a;--rest:#4aa3ff;--bad:#ff5a6a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:Manrope,system-ui,sans-serif;background:radial-gradient(1200px 500px at 50% -200px,#2a1a10,var(--bg));color:var(--fg);min-height:100vh;padding-bottom:84px}
+.wrap{max-width:520px;margin:0 auto;padding:14px}
+h1{font-size:22px;margin:4px 0}h2{font-size:17px;margin:0 0 8px}
+.card{background:var(--card);border-radius:20px;padding:16px;margin-bottom:12px;border:1px solid #232838}
+.mut{color:var(--mut);font-size:14px}
+button{font:inherit;border:0;border-radius:14px;padding:13px 14px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#1a0d04;font-weight:800;width:100%;margin-top:8px;cursor:pointer}
+button.sec{background:var(--card2);color:var(--fg);font-weight:600}
+button.sm{width:auto;padding:9px 12px;margin:4px 4px 0 0;font-size:14px}
+.row{display:flex;gap:8px;align-items:center}.row>*{flex:1}
+input,textarea{font:inherit;padding:12px;border-radius:12px;border:1px solid #2b3142;background:#0f1219;color:var(--fg);width:100%}
+nav{position:fixed;bottom:0;left:0;right:0;background:#0f1219ee;backdrop-filter:blur(10px);border-top:1px solid #232838;display:flex;justify-content:center}
+nav button{background:none;color:var(--mut);font-weight:600;font-size:12px;margin:0;padding:10px 4px 14px;border-radius:0;max-width:110px}
+nav button b{display:block;font-size:22px}nav button.on{color:var(--acc)}
+.hero{display:flex;gap:14px;align-items:center}
+.ring{width:96px;height:96px;flex:none}
+.big{font-size:30px;font-weight:800;line-height:1.1}
+.pill{display:inline-block;background:var(--card2);border-radius:999px;padding:4px 10px;font-size:13px;margin:3px 4px 0 0}
+.bar{height:10px;background:#232838;border-radius:6px;overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2));width:0;transition:width .4s}
+.mission{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #222737}
+.mission:last-child{border:0}.chk{width:26px;height:26px;border-radius:8px;border:2px solid #3a4157;display:flex;align-items:center;justify-content:center;flex:none}
+.mission.done .chk{background:var(--ok);border-color:var(--ok);color:#06281b}.mission.done span{color:var(--mut);text-decoration:line-through}
+.coach{background:linear-gradient(135deg,#2b1708,#1c2130);border:1px solid #4a2a12}
+.water{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.drop{font-size:26px;opacity:.25}.drop.f{opacity:1}
+.fig{display:flex;justify-content:center;background:#0f1219;border-radius:16px;margin:8px 0}.fig svg{width:260px;height:250px}
+.phase{font-size:14px;text-transform:uppercase;letter-spacing:.1em;font-weight:800}
+.time{font-size:68px;font-weight:800;text-align:center;font-variant-numeric:tabular-nums;line-height:1}
+.lib{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.lib div{background:#0f1219;border-radius:12px;padding:6px;text-align:center;font-size:12px}.lib svg{width:100%;height:80px}
+.badge{display:inline-flex;flex-direction:column;align-items:center;width:31%;margin:1%;background:#0f1219;border-radius:14px;padding:10px 4px;font-size:12px;text-align:center;opacity:.35}.badge.got{opacity:1;border:1px solid var(--acc)}.badge b{font-size:28px}
+table{width:100%;border-collapse:collapse;font-size:15px}td{padding:7px 0;border-bottom:1px solid #232838}
+.today{border:2px solid var(--acc)}
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:var(--ok);color:#06281b;font-weight:800;padding:12px 18px;border-radius:14px;z-index:9;display:none}
+#player{display:none}
+.chat{white-space:pre-wrap;line-height:1.45;margin-top:8px}
+</style>
+</head>
+<body>
+<script>
+// ===== Android-мост: заменяет облачные возможности на локальные =====
+if(window.Android){
+ const subs={};
+ const mk=(path)=>({
+  get:async()=>{const v=Android.get(path);return {data:()=>v?JSON.parse(v):null}},
+  set:async(o)=>{Android.put(path,JSON.stringify(o))},
+  onSnapshot:(cb)=>{(subs[path]=subs[path]||[]).push(cb);return()=>{}}
+ });
+ const db={doc:mk,collection:(c)=>({get:async()=>JSON.parse(Android.list(c)).map(d=>({id:d.id,data:()=>d.data})),doc:(k)=>mk(c+'/'+k)})};
+ window.__cfgUpdate=()=>{const v=Android.get('config/main');(subs['config/main']||[]).forEach(cb=>cb({data:()=>v?JSON.parse(v):null}))};
+ window.claude={use:async(n)=>n==='db'?db:null};
+}
+</script>
+
+<div class="toast" id="toast"></div><div id="rembox" style="display:none;position:fixed;left:12px;right:12px;top:12px;z-index:8;max-width:500px;margin:0 auto"></div>
+<div class="wrap" id="app"></div>
+<div class="wrap"><div id="player" class="card">
+  <div class="phase" id="phase">Готовься</div>
+  <div class="big" id="ex" style="margin:4px 0">—</div>
+  <div class="mut" id="info"></div>
+  <div class="fig" id="fig"></div>
+  <div class="time" id="time">0</div>
+  <div class="bar"><i id="pbar"></i></div>
+  <div style="margin-top:8px;line-height:1.45" id="cue"></div>
+  <div id="fbk"></div>
+  <div class="row" id="pctl"><button class="sec" onclick="togglePause()" id="pb">Пауза</button><button class="sec" onclick="nextStep()">Дальше ⏭</button></div>
+  <button class="sec" onclick="stop()">Выйти</button>
+</div></div>
+<nav id="nav"></nav>
+
+<script>
+// ================= ПРОФИЛЬ И ЦЕЛИ (по умолчанию; Claude меняет через базу config/main) =================
+let CFG={start:119,goal:90,kcal:2050,protein:150,water:2500,glass:250,
+ msg:"Привет! Это наше с тобой приложение. Не нужно быть идеальным — нужно просто не пропускать два дня подряд. Сегодня сделай хотя бы одно: воду, 3-минутный перерыв или тренировку. Я рядом. — Claude",
+ schedule:[["07:00","Подъём, стакан воды"],["07:05","Взвешивание (пн, чт)"],["07:10","Тренировка (пн, ср, пт)"],["07:50","Уход утром"],["08:00","Завтрак"],["09:00–16:00","Каждый час: вода + перерыв 3 мин"],["13:00","Обед"],["16:30","Перекус"],["18:00","Вечер 15 мин"],["19:30","Ужин — последняя еда"],["21:00","Лицо и шея 6 мин"],["21:10","Уход вечером"]]};
+
+// ================= КАРТИНКИ: детальные фигуры с плавной анимацией =================
+// Суставы (вид сбоку, лицом вправо): hd голова, sh плечо, hp таз, kn колено, an лодыжка, to носок, el локоть, wr кисть; *2 — дальняя сторона
+const BASE={hd:[60,14],sh:[60,29],hp:[60,61],kn:[61,85],an:[60,108],el:[60,45],wr:[61,59]};
+const F=o=>Object.assign({},BASE,o);
+const POSE={
+ swing:[F({hd:[84,38],sh:[75,46],hp:[47,62],kn:[57,85],an:[60,108],el:[70,62],wr:[63,76],kb:1}),
+        F({hd:[58,14],sh:[59,29],hp:[61,61],el:[74,32],wr:[89,33],kb:1,kbo:[6,4]})],
+ goblet:[F({el:[67,45],wr:[69,35],el2:[66,45],wr2:[68,35],kb:1,kbo:[4,4]}),
+         F({hd:[64,42],sh:[61,56],hp:[49,84],kn:[73,82],an:[63,108],el:[71,69],wr:[73,59],el2:[70,69],wr2:[72,59],kb:1,kbo:[4,4]})],
+ squat:[F({el:[75,30],wr:[90,30],el2:[74,31],wr2:[89,31]}),
+        F({hd:[66,42],sh:[62,56],hp:[49,84],kn:[73,82],an:[63,108],el:[77,55],wr:[92,55],el2:[76,56],wr2:[91,56]})],
+ row:[F({hd:[93,47],sh:[81,52],hp:[45,58],kn:[47,83],an:[45,108],kn2:[66,82],an2:[72,108],el:[81,68],wr:[81,84],el2:[90,66],wr2:[96,79],kb:1,chair:1}),
+      F({hd:[93,47],sh:[81,52],hp:[45,58],kn:[47,83],an:[45,108],kn2:[66,82],an2:[72,108],el:[66,42],wr:[74,58],el2:[90,66],wr2:[96,79],kb:1,chair:1})],
+ push:[F({hd:[101,63],sh:[90,70],hp:[54,86],kn:[34,95],an:[15,103],to:[10,110],el:[90,89],wr:[91,108]}),
+       F({hd:[99,91],sh:[88,96],hp:[52,101],kn:[33,104],an:[15,106],to:[10,110],el:[76,96],wr:[91,108]})],
+ deskpush:[F({hd:[85,33],sh:[77,44],hp:[55,72],kn:[43,90],an:[31,108],to:[38,110],el:[87,51],wr:[95,60],table:1}),
+           F({hd:[93,45],sh:[83,54],hp:[59,78],kn:[45,93],an:[31,108],to:[38,110],el:[82,67],wr:[95,60],table:1})],
+ press:[F({el:[67,42],wr:[65,30],kb:1,kbo:[3,-3]}),F({el:[62,10],wr:[61,-4],kb:1,kbo:[3,-3]})],
+ plank:[F({hd:[101,84],sh:[90,90],hp:[54,95],kn:[34,100],an:[15,104],to:[10,110],el:[90,108],wr:[104,108]}),
+        F({hd:[101,83],sh:[90,89],hp:[54,92],kn:[34,99],an:[15,104],to:[10,110],el:[90,108],wr:[104,108]})],
+ march:[F({kn:[76,68],an:[72,91],to:[80,93],kn2:[61,85],an2:[60,108],to2:[68,110],el:[52,43],wr:[49,56],el2:[67,41],wr2:[74,32]}),
+        F({kn2:[76,68],an2:[72,91],to2:[80,93],el2:[52,43],wr2:[49,56],el:[67,41],wr:[74,32]})],
+ lunge:[F({el:[54,46],wr:[59,61]}),
+        F({hd:[59,32],sh:[59,47],hp:[58,78],kn:[76,82],an:[75,108],kn2:[47,103],an2:[32,103],to2:[27,110],el:[54,63],wr:[60,77]})],
+ bridge:[F({hd:[13,103],sh:[25,104],hp:[57,104],kn:[77,84],an:[85,106],to:[93,108],el:[38,108],wr:[50,108],lie:1}),
+         F({hd:[13,103],sh:[26,102],hp:[59,82],kn:[79,79],an:[85,106],to:[93,108],el:[38,108],wr:[50,108],lie:1})],
+ hinge:[F({el:[72,24],wr:[61,17]}),F({hd:[91,43],sh:[80,47],hp:[48,61],kn:[57,85],el:[94,52],wr:[88,42]})],
+ halo:[F({el:[72,22],wr:[73,8],el2:[71,23],wr2:[72,9],kb:1,kbo:[2,-4]}),F({el:[49,22],wr:[47,8],el2:[50,23],wr2:[48,9],kb:1,kbo:[-2,-4]})],
+ jack:[F({front:1,hd:[60,14],sh:[60,29],hp:[60,61],kn:[56,85],an:[55,108],kn2:[64,85],an2:[65,108],el:[50,44],wr:[48,59],el2:[70,44],wr2:[72,59]}),
+       F({front:1,hd:[60,14],sh:[60,29],hp:[60,61],kn:[50,85],an:[42,108],kn2:[64,85],an2:[65,108],el:[47,18],wr:[42,3],el2:[73,18],wr2:[78,3]})],
+ stretch:[F({front:1,el:[56,14],wr:[58,-1],el2:[64,14],wr2:[62,-1],kn:[57,85],an:[56,108],kn2:[63,85],an2:[64,108]}),
+          F({front:1,hd:[50,16],sh:[54,30],el:[44,15],wr:[36,3],el2:[52,14],wr2:[42,1],kn:[57,85],an:[56,108],kn2:[63,85],an2:[64,108]})],
+ rest:[F({}),F({})]
+};
+const lerp=(a,b,t)=>a.map((v,i)=>v+(b[i]-v)*t);
+function mix(A,B,t){const o={};for(const k in A){o[k]=Array.isArray(A[k])&&Array.isArray(B[k])?lerp(A[k],B[k],t):A[k]}return o}
+function full(q){q=Object.assign({},q);['kn','an','el','wr'].forEach(k=>{if(!q[k+'2'])q[k+'2']=q[k]});
+ if(!q.to)q.to=q.front?[q.an[0]-4,q.an[1]+2]:[q.an[0]+8,q.an[1]+2];if(!q.to2)q.to2=q.front?[q.an2[0]+4,q.an2[1]+2]:[q.an2[0]+8,q.an2[1]+2];return q}
+function bodySvg(k,t){const P=POSE[k]||POSE.rest;let q=full(mix(full(P[0]),full(P[1]),t));
+ const L=(a,b,c,w)=>`<line x1="${a[0].toFixed(1)}" y1="${a[1].toFixed(1)}" x2="${b[0].toFixed(1)}" y2="${b[1].toFixed(1)}" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/>`;
+ const SK='#f0c7a2',SKd='#c99a78',SH='#ff7a2f',PA='#3d5a9e',PAd='#2a3d6b',SHO='#e8ebf2';
+ let s=`<svg viewBox="0 -14 120 130"><rect x="0" y="110" width="120" height="6" fill="#232838"/>`;
+ if(q.chair)s+=`<rect x="86" y="77" width="26" height="5" rx="2" fill="#6b5640"/><line x1="89" y1="82" x2="89" y2="110" stroke="#6b5640" stroke-width="3"/><line x1="109" y1="82" x2="109" y2="110" stroke="#6b5640" stroke-width="3"/><line x1="109" y1="77" x2="109" y2="52" stroke="#6b5640" stroke-width="3"/>`;
+ if(q.table)s+=`<rect x="92" y="58" width="28" height="5" rx="2" fill="#6b5640"/><line x1="114" y1="63" x2="114" y2="110" stroke="#6b5640" stroke-width="3"/>`;
+ if(q.lie)s+=`<rect x="4" y="108" width="70" height="3" rx="1" fill="#4a3a6b"/>`;
+ // дальние конечности
+ s+=L(q.hp,q.kn2,PAd,11)+L(q.kn2,q.an2,PAd,9)+L(q.an2,q.to2,'#222',6);
+ s+=L(q.sh,q.el2,SKd,8)+L(q.el2,q.wr2,SKd,7);
+ // торс + шея
+ const nk=lerp(q.sh,q.hd,.45);
+ s+=L(q.sh,nk,SK,7)+L(q.sh,q.hp,SH,17)+L(q.hp,lerp(q.hp,q.sh,.12),PA,17);
+ // голова: лицо смотрит по направлению торса
+ const dx=q.front?0:Math.sign((q.hd[0]-q.hp[0])||1)*3;
+ s+=`<circle cx="${q.hd[0]}" cy="${q.hd[1]}" r="8.5" fill="${SK}"/><path d="M${q.hd[0]-8.5} ${q.hd[1]-1} A8.5 8.5 0 0 1 ${q.hd[0]+8.5} ${q.hd[1]-1} L${q.hd[0]+8.5-(dx>0?6:0)} ${q.hd[1]-3} Z" fill="#3a2a1e"/>`;
+ if(!q.front)s+=`<circle cx="${q.hd[0]+dx+1.5}" cy="${q.hd[1]}" r="1.3" fill="#1a0d04"/>`;else s+=`<circle cx="${q.hd[0]-3}" cy="${q.hd[1]}" r="1.2" fill="#1a0d04"/><circle cx="${q.hd[0]+3}" cy="${q.hd[1]}" r="1.2" fill="#1a0d04"/>`;
+ // ближние конечности
+ s+=L(q.hp,q.kn,PA,12)+L(q.kn,q.an,PA,10)+L(q.an,q.to,'#111',6);
+ s+=L(q.sh,q.el,SK,9)+L(q.el,q.wr,SK,8)+`<circle cx="${q.wr[0]}" cy="${q.wr[1]}" r="3.6" fill="${SK}"/>`;
+ if(q.kb){const o=q.kbo||[0,8],c=[q.wr[0]+o[0],q.wr[1]+o[1]];s+=`<path d="M${c[0]-4.5} ${c[1]-3} Q${c[0]} ${c[1]-12} ${c[0]+4.5} ${c[1]-3}" stroke="#1d2a44" stroke-width="2.6" fill="none"/><circle cx="${c[0]}" cy="${c[1]+2}" r="7" fill="#1d2a44"/><circle cx="${c[0]-2}" cy="${c[1]}" r="2" fill="#4a6ba8"/>`}
+ return s+'</svg>'}
+// ===== ЛИЦО: бюст с плавной анимацией =====
+function faceSvg(k,t){const e=t;let rot=0,tx=0;if(k==='chin')rot=-18*e;if(k==='neck')rot=20*e;
+ const SK='#f0c7a2';let mouth,eyes,brows='<path d="M37 41 Q43 38 48 41 M52 41 Q57 38 63 41" stroke="#3a2a1e" stroke-width="2.4" fill="none"/>',cheek='',jaw=0,extra='';
+ eyes=`<ellipse cx="42.5" cy="48" rx="4" ry="${(2.6-(k==='eyes'?2.1*e:0)).toFixed(2)}" fill="#fff"/><ellipse cx="57.5" cy="48" rx="4" ry="${(2.6-(k==='eyes'?2.1*e:0)).toFixed(2)}" fill="#fff"/><circle cx="43" cy="48" r="${k==='eyes'?1.8-1.2*e:1.8}" fill="#2a1a10"/><circle cx="58" cy="48" r="${k==='eyes'?1.8-1.2*e:1.8}" fill="#2a1a10"/>`;
+ mouth=`<path d="M43 70 Q50 72 57 70" stroke="#8a3b2e" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
+ if(k==='chin')mouth=`<path d="M45 ${70-2*e} Q50 ${66-4*e} 55 ${70-2*e}" stroke="#8a3b2e" stroke-width="${2.6+2*e}" fill="none" stroke-linecap="round"/>`;
+ if(k==='vowel'){const o=e<.5;mouth=o?`<ellipse cx="50" cy="71" rx="${4+2*e}" ry="${3+12*e}" fill="#5a1f18"/>`:`<path d="M${40-4*e} 70 Q50 ${74+2*e} ${60+4*e} 70 Q50 ${72} ${40-4*e} 70" fill="#fff" stroke="#8a3b2e" stroke-width="2"/>`}
+ if(k==='smile')mouth=`<path d="M${42-6*e} ${69-3*e} Q50 ${73+8*e} ${58+6*e} ${69-3*e}" stroke="#8a3b2e" stroke-width="2.6" fill="${e>.3?'#fff':'none'}"/>`+(e>.3?`<circle cx="${36-6*e}" cy="${66-3*e}" r="3" fill="${SK}" stroke="#c99a78"/><circle cx="${64+6*e}" cy="${66-3*e}" r="3" fill="${SK}" stroke="#c99a78"/>`:'');
+ if(k==='cheek'){const l=e<.5;cheek=`<circle cx="${l?30:70}" cy="64" r="${4+6*Math.sin(e*Math.PI)}" fill="#f5b28a" opacity=".9"/>`;mouth=`<path d="M46 70 Q50 68 54 70" stroke="#8a3b2e" stroke-width="3" fill="none"/>`}
+ if(k==='jaw'){jaw=5*e;mouth=`<path d="M43 ${70+jaw*.3} Q50 ${68+jaw*.3} ${57+jaw} ${70+jaw*.3}" stroke="#8a3b2e" stroke-width="2.6" fill="none"/>`}
+ if(k==='tongue'){mouth=`<path d="M43 70 Q50 72 57 70" stroke="#8a3b2e" stroke-width="2.6" fill="none"/>`;extra=`<path d="M38 82 Q50 ${88-6*e} 62 82" stroke="#ff7a2f" stroke-width="2.4" fill="none" opacity="${.3+.7*e}"/><text x="66" y="92" font-size="7" fill="#ffb347" opacity="${e}">↑ к нёбу</text>`}
+ const chinY=88+(k==='jaw'?2*e:0);
+ return `<svg viewBox="0 0 100 116"><path d="M8 116 Q12 98 34 96 L66 96 Q88 98 92 116 Z" fill="#ff7a2f"/>
+ <g transform="rotate(${rot} 50 100)"><rect x="40" y="78" width="20" height="22" fill="#e2b38f"/>
+ <path d="M22 54 Q22 18 50 16 Q78 18 78 54 Q78 76 ${62+jaw} ${chinY} Q50 ${96+jaw*.4} ${38} ${chinY} Q22 76 22 54Z" fill="${SK}"/>
+ <path d="M22 50 Q20 14 50 12 Q80 14 78 50 Q74 26 50 24 Q28 26 22 50Z" fill="#3a2a1e"/>
+ <ellipse cx="21" cy="54" rx="3.5" ry="7" fill="#e2b38f"/><ellipse cx="79" cy="54" rx="3.5" ry="7" fill="#e2b38f"/>
+ ${brows}${eyes}<path d="M50 50 L47 62 Q50 64 53 62" stroke="#c99a78" stroke-width="2" fill="none"/>${cheek}${mouth}${extra}</g></svg>`}
+const svg=(e,t)=>e?(e.face?faceSvg(e.p,t):bodySvg(e.p,t)):'';
+
+
+// ================= УПРАЖНЕНИЯ =================
+const EX={
+ warm:{n:"Разминка",p:"march",t:"Ходьба на месте, круги плечами и тазом. Разогрейся."},
+ swing:{n:"Махи гирей",p:"swing",t:"Таз назад, спина прямая, гиря между ног. Резкий толчок тазом, гиря летит до груди силой бёдер, не рук."},
+ goblet:{n:"Гоблет-присед",p:"goblet",t:"Гиря у груди. Садись глубоко, колени по линии носков, пятки на полу."},
+ squat:{n:"Приседания",p:"squat",t:"Руки вперёд, таз назад и вниз, спина ровная."},
+ row:{n:"Тяга в наклоне",p:"row",t:"Опора рукой о стул, спина ровно. Тяни гирю к поясу локтем назад.",sw:1},
+ push:{n:"Отжимания",p:"push",t:"Тело прямое, локти под 45 градусов. Тяжело, тогда с колен."},
+ deskpush:{n:"Отжимания от стола",p:"deskpush",t:"Руки на край стола, тело прямое. Плавно вниз и вверх."},
+ press:{n:"Жим гири стоя",p:"press",t:"Гиря у плеча, напряги пресс и ягодицы, выжимай вверх без прогиба.",sw:1},
+ plank:{n:"Планка",p:"plank",t:"На локтях, тело прямой линией, пресс напряжён."},
+ march:{n:"Ходьба на месте",p:"march",t:"Колени высоко, работай руками, бодрый темп."},
+ lunge:{n:"Выпады назад",p:"lunge",t:"Шаг назад, оба колена под прямым углом, корпус прямой. Чередуй ноги."},
+ bridge:{n:"Ягодичный мост",p:"bridge",t:"Лёжа, стопы у таза. Поднимай таз, сжимая ягодицы, вверху пауза."},
+ hinge:{n:"Наклоны",p:"hinge",t:"Руки за головой, колени чуть согнуты, таз назад, спина ровная."},
+ halo:{n:"Гало с гирей",p:"halo",t:"Гиря за рожки, медленно води вокруг головы. Меняй направление."},
+ jack:{n:"Тихие джеки",p:"jack",t:"Шаг в сторону с руками вверх, поочерёдно, без прыжков."},
+ stretch:{n:"Растяжка",p:"stretch",t:"Потянись вверх, наклоны в стороны, дыши глубоко."},
+ cool:{n:"Заминка",p:"stretch",t:"Медленно растяни ноги и спину. Молодец!"},
+ // лицо и шея
+ f_chin:{n:"Подбородок к потолку",p:"chin",face:1,t:"Сидя прямо, запрокинь голову и тяни нижнюю губу вверх, будто целуешь потолок. Держи 5 секунд, расслабь."},
+ f_neck:{n:"Наклоны шеи",p:"neck",face:1,t:"Медленно наклоняй голову к плечу, плечи вниз. Чувствуй растяжение боковой поверхности шеи.",sw:1},
+ f_jaw:{n:"Челюсть вперёд",p:"jaw",face:1,t:"Выдвини нижнюю челюсть вперёд, губы сомкнуты, чувствуй напряжение под подбородком. 5 секунд и назад."},
+ f_tongue:{n:"Язык к нёбу",p:"tongue",face:1,t:"Плотно прижми весь язык к нёбу, сглотни и удерживай. Укрепляет мышцы под подбородком."},
+ f_vowel:{n:"Гласные О и И",p:"vowel",face:1,t:"Чётко и широко произноси О, потом И, утрируя движение губ и щёк."},
+ f_cheek:{n:"Щёки-воздух",p:"cheek",face:1,t:"Набери воздух, перегоняй его из щеки в щеку и под верхнюю губу."},
+ f_smile:{n:"Улыбка с сопротивлением",p:"smile",face:1,t:"Широко улыбнись, пальцами слегка придержи уголки рта. 5 секунд и расслабь."},
+ f_eyes:{n:"Прищур",p:"eyes",face:1,t:"Указательными пальцами под глазами, мягко прищуривайся, не морща лоб."}
+};
+// ================= НАГРАДЫ: что получит мозг (оценки примерные, при регулярности) =================
+const REW={
+ swing:["🔥 ~15 ккал в минуту — как 3 минуты бега в гору","🍑 Через 3 недели: +20–30% силы ягодиц и задней поверхности бедра","🫀 Сердце: через месяц пульс в покое ниже на 3–5 ударов","🧍 Осанка ровнее, поясница перестаёт ныть от сидения","🚀 Взрывная сила: прыжок выше и «лёгкие» ноги на лестнице"],
+ goblet:["🦵 Через 2 недели: +3–5 повторов в приседе","🔥 Ноги — самые большие мышцы: больше мышц = больше калорий даже во сне","🦴 Крепче колени и тазобедренные суставы","🧠 Тренировка ног усиливает выброс гормонов роста и тестостерона","🏃 Через месяц: встаёшь с дивана и поднимаешься по лестнице без одышки"],
+ squat:["🦵 20 приседаний ≈ подъём на 2 этажа пешком","🩸 Ускоряет кровоток после сидения — меньше тяжести в ногах","🔥 Снижает сахар в крови после еды","💪 Через 2 недели: +5 повторов","🧠 Бодрость: мозг получает больше крови и кислорода"],
+ row:["💪 Через 2–3 недели: шаг к первому/+1 подтягиванию","🧍 Плечи разворачиваются — минус «офисная» сутулость","🦾 Широкая спина визуально делает талию уже","🤝 Хват сильнее: тяжёлые сумки — легко","🛡 Меньше боли в шее и между лопатками"],
+ push:["💪 Через 2 недели: +3–5 отжиманий","👕 Грудь и плечи заполняют футболку","🧱 Мышцы кора — как бонусная планка","🔥 Чем сильнее верх, тем легче остальные тренировки","🏆 Цель: 30 отжиманий подряд к лету"],
+ deskpush:["🪑 3 минуты у стола снимают усталость от 1 часа сидения","💪 Подготовка к полным отжиманиям","🧍 Раскрывает грудь после клавиатуры","🧠 Встряхивает мозг — фокус на работе выше","🔥 Каждый перерыв ≈ +15–20 ккал, за день ~100"],
+ press:["💪 Через 3 недели: +2 повтора жима гири","🏋️ Сильные плечи — легко поднимать вещи над головой","🧍 Стабильный кор и поясница","👕 Широкие плечи = силуэт «V»","🛡 Здоровые плечевые суставы надолго"],
+ plank:["🧱 Через 2 недели: +20–30 секунд","🛡 Спина болит меньше — мышцы держат позвоночник","⬇️ Живот подтягивается визуально","🧘 Тренирует терпение и выдержку","💪 Помогает во всех остальных упражнениях"],
+ march:["🔥 10 минут ≈ 1000–1500 шагов и ~50 ккал","🫀 Лёгкое кардио без вреда суставам","🩸 Снимает отёки и тяжесть после сидения","🧠 Снижает стресс и тревожность","😴 Сон глубже вечером"],
+ lunge:["🦵 Равновесие и сила каждой ноги отдельно","🍑 Подтянутые ягодицы через месяц","🦴 Колени устойчивее","🏃 Шаг увереннее и легче","🔥 Много мышц в работе = много калорий"],
+ bridge:["🍑 Сильные ягодицы снимают нагрузку с поясницы","🧍 Сидячая работа «выключает» ягодицы — мост включает обратно","🛡 Меньше боли в спине через 2–3 недели","🦵 Мощнее махи гирей","🔥 Простое и безопасное движение"],
+ hinge:["🧍 Учит наклоняться без вреда спине","🦵 Растягивает заднюю поверхность бедра","💪 Основа для махов гирей","🛡 Меньше риска «сорвать» поясницу","🧠 Перезагрузка после сидения"],
+ halo:["🛡 Подвижные, здоровые плечи","🧍 Снимает зажим шеи после компьютера","💪 Стабилизирует кор","🔥 Отличная разминка верха","🧠 Тренирует координацию"],
+ jack:["🔥 Сжигает ~10 ккал в минуту","🫀 Разгоняет пульс в зону жиросжигания","🤫 Тихо — соседи не жалуются","🦵 Укрепляет голеностоп","🧠 Мгновенная бодрость"],
+ stretch:["🧘 Снимает зажимы спины и шеи","😴 Лучше сон","🩸 Расслабляет мышцы после нагрузки","🧍 Чуть выше рост — распрямляется позвоночник","🧠 Снижает уровень стресса"],
+ f_chin:["😎 Чётче линия подбородка через 4–6 недель","⬇️ Уменьшает визуальный «второй подбородок»","🧍 Шея крепче и ровнее","🧠 Снимает напряжение от взгляда в экран","📸 Лучше выглядишь на фото в профиль"],
+ f_neck:["🧍 Минус боль в шее от компьютера","😎 Длинная, ровная шея","🛡 Меньше головных болей напряжения","🧠 Мягкая перезагрузка","😴 Легче засыпать"],
+ f_jaw:["😎 Чётче угол челюсти","💪 Тонус мышц под подбородком","🧍 Помогает осанке головы","📸 Мужественный профиль","🧠 Упражнение можно делать незаметно на звонке"],
+ f_tongue:["😎 Подтягивает зону под подбородком","🧍 Правильное положение языка улучшает осанку головы","😴 Сильнее мышцы горла — тише храп","🧠 Можно делать в любое время","📸 Профиль ровнее"],
+ f_vowel:["😊 Живая мимика и чёткая речь","🩸 Приток крови к лицу — свежий цвет кожи","🗣 Голос увереннее на созвонах","😎 Тонус щёк","🧠 Снимает напряжение лица"],
+ f_cheek:["😊 Тонус щёк и губ","🩸 Кровоток — лицо свежее","😎 Меньше «поплывших» щёк при похудении","🧠 Весело и быстро","🗣 Подвижность губ"],
+ f_smile:["😊 Открытая, уверенная улыбка","😎 Тонус нижней части лица","🧠 Улыбка, даже нарочная, поднимает настроение","🗣 Приятнее выглядишь на видеозвонках","🩸 Свежий цвет лица"],
+ f_eyes:["👁 Тонус вокруг глаз","😎 Меньше «уставшего» взгляда","🧠 Отдых для глаз от экрана","🩸 Меньше отёков под глазами","😊 Лицо выглядит бодрее"]
+};
+const WREW={
+ A:["🔥 ~350–400 ккал — как 40 минут бега","💪 Через 2 недели: +2–3 повтора в каждом упражнении","🧠 Эндорфины на 2–3 часа — лучшее настроение дня","⚖️ Мышцы сохраняются, уходит именно жир","🛌 Сон глубже ночью"],
+ B:["🦵 Сильные ноги и спина — основа для бега и подтягиваний","🔥 ~350 ккал","🛡 Спина болит меньше","🍑 Подтянутая фигура через месяц","🧠 Ясная голова на работе"],
+ C:["🔥 Интервалы ускоряют обмен веществ на 12–24 часа","🫀 Выносливость: через 3 недели меньше одышки","⏱ Максимум пользы за 30 минут","🧠 Сильнейший заряд энергии","⚖️ Лучшее для сжигания жира на животе"],
+ desk:["🪑 Обнуляет вред от часа сидения","🔥 6 перерывов ≈ 100 ккал в день ≈ 1 кг жира за 2,5 месяца","🧠 Концентрация выше — работа быстрее","🩸 Меньше риск тромбов и отёков","💧 Заодно выпиваешь стакан воды"],
+ eve:["🔥 ~150 ккал вечером","😴 Сон глубже","🧠 Сбрасывает стресс дня","🍽 Меньше тяга к вечерним перекусам","🫀 Здоровое сердце"],
+ face:["😎 Через 4–6 недель: чётче овал лица и шея","📸 При похудении лицо подтягивается, а не «плывёт»","🧠 Расслабляет перед сном","🧍 Ровная осанка головы","😊 Уверенность в себе каждый день"]
+};
+const MREW={water:"💧 Энергия +, голод −, кожа чище, обмен быстрее",protein:"💪 Мышцы сохраняются, сытость на 3–4 часа",weight:"📉 Видишь реальный прогресс — мозг любит цифры",desk:"🪑 Каждый перерыв ≈ 15–20 ккал и ясная голова"};
+const CARE={
+ am:{n:"☀️ Уход утром",t:"~5 мин, после тренировки или душа",steps:[
+  ["Умыться гелем для умывания","Мягкий гель без мыла и спирта (CeraVe, La Roche-Posay Effaclar, Cetaphil или любой мягкий из аптеки). Тёплая вода, 30–60 секунд массажем, промокнуть полотенцем."],
+  ["Холодная вода на лицо 10 сек","Тонизирует, меньше отёков после сна."],
+  ["Увлажняющий крем","Лёгкий крем или флюид для лица. Кожа при похудении нуждается в увлажнении."],
+  ["Крем SPF 30–50","Даже зимой и дома у окна. Главное средство против морщин и пигмента."],
+  ["Борода/щетина, губы","Подровнять линию, на губы — бальзам."],
+  ["Зубы + стакан воды","Почистить 2 мин и выпить воды."]],
+  rew:["😎 Через 3–4 недели: кожа ровнее и свежее","☀️ SPF — минус годы на лице через 5–10 лет","🧼 Меньше жирного блеска и чёрных точек","🧠 Ритуал утра настраивает мозг на дисциплину","🤝 Ухоженный вид = выше уверенность на созвонах"]},
+ pm:{n:"🌙 Уход вечером",t:"~5 мин, после лица и шеи",steps:[
+  ["Умыться гелем","Смыть SPF, пот и грязь дня. Тщательно, 60 секунд."],
+  ["Актив (пн, ср, пт)","Начни с 2–3 вечеров в неделю: ретинол 0,2–0,3% (от морщин и пор) или кислота BHA 2% (от чёрных точек). Не одновременно. Если щиплет — реже."],
+  ["Увлажняющий крем","Плотнее утреннего можно. Наносить и на шею."],
+  ["Бальзам для губ","Тонкий слой на ночь."],
+  ["Зубы + нить","Нить каждый вечер — дёсны и свежее дыхание."],
+  ["Экран прочь за 30 мин до сна","Сон — главный «крем»: кожа восстанавливается ночью, а недосып усиливает голод."]],
+  rew:["🌙 Кожа восстанавливается ночью в 2 раза активнее","😎 Ретинол через 8–12 недель: меньше пор и тонких морщин","🧼 Чистые поры — меньше воспалений","😴 Ритуал перед сном помогает засыпать","🍽 Хороший сон = меньше тяга к сладкому завтра"]}
+};
+function careView(w){const d=day();d.care=d.care||{};const c=d.care[w]||[];const R=CARE[w];
+ $('careout').innerHTML=`<div class="card" style="background:#0f1219;margin-top:10px"><h2>${R.n}</h2><div class="mut">${R.t}</div>${R.steps.map((s,i)=>`<div class="mission ${c[i]?'done':''}" onclick="careTick('${w}',${i})"><div class="chk">${c[i]?'✓':''}</div><div><span>${s[0]}</span><div class="mut" style="font-size:13px">${s[1]}</div></div></div>`).join('')}${rewList(R.rew)}</div>`;$('careout').scrollIntoView({behavior:'smooth'})}
+function careTick(w,i){const d=day();d.care=d.care||{};const c=d.care[w]=d.care[w]||[];c[i]=!c[i];saveDay();if(CARE[w].steps.every((_,j)=>c[j])){toast('✨ Уход выполнен! +5 XP');render();setTimeout(()=>careView(w),50)}else careView(w)}
+const careDone=w=>{const c=(day().care||{})[w]||[];return CARE[w].steps.every((_,j)=>c[j])};
+function rewList(a){return a?`<div style="margin-top:10px"><b>🎁 Что ты получишь:</b><ul style="padding-left:18px;margin:4px 0;line-height:1.45">${a.map(x=>`<li>${x}</li>`).join('')}</ul></div>`:''}
+
+// ================= ТРЕНИРОВКИ: [упражнение, работа сек, отдых сек] =================
+let W={
+ A:{n:"Силовая A",d:"Гиря · всё тело",rounds:3,warm:240,list:[["swing",40,20],["goblet",45,20],["row",60,20],["push",40,20],["press",60,20],["plank",40,75]]},
+ B:{n:"Силовая B",d:"Ноги и спина",rounds:3,warm:240,list:[["swing",40,20],["lunge",50,20],["bridge",45,20],["row",60,20],["halo",40,20],["plank",40,75]]},
+ C:{n:"Интервалы C",d:"30/30 · жиросжигание",rounds:4,warm:240,list:[["swing",30,30],["squat",30,30],["jack",30,30],["push",30,30],["march",30,60]]},
+ desk:{n:"Перерыв 3 мин",d:"Каждый час 9–16",rounds:1,warm:0,list:[["squat",40,10],["march",40,10],["deskpush",30,10],["hinge",30,10],["stretch",30,0]]},
+ eve:{n:"Вечер 15 мин",d:"Ходьба + махи",rounds:1,warm:0,list:[["march",300,15],["jack",120,15],["swing",30,40],["swing",30,40],["swing",30,40],["march",180,0],["stretch",60,0]]},
+ face:{n:"Лицо и шея",d:"Фейсбилдинг · 6 мин",rounds:1,warm:0,list:[["f_chin",40,10],["f_neck",60,10],["f_jaw",40,10],["f_tongue",40,10],["f_vowel",40,10],["f_cheek",40,10],["f_smile",40,10],["f_eyes",30,0]]}
+};
+const DAYW={1:'A',3:'B',5:'C'};
+const XPV={A:60,B:60,C:60,desk:10,eve:30,face:15};
+
+// ================= ДАННЫЕ =================
+let db=null,DAYS={},STATE={level:0,why:""},sample=null,tts=null;
+const todayKey=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const day=(k=todayKey())=>DAYS[k]||(DAYS[k]={water:0,foods:[],done:[],weight:null});
+const val=r=>r==null?null:(typeof r.data==='function'?r.data():(r.data!==undefined?r.data:r));
+function lsSave(){try{localStorage.setItem('coach',JSON.stringify({DAYS,STATE}))}catch(e){}}
+function lsLoad(){try{const o=JSON.parse(localStorage.getItem('coach')||'null');if(o){DAYS=o.DAYS||{};STATE=Object.assign(STATE,o.STATE||{})}}catch(e){}}
+const pend={};
+function save(path,obj){lsSave();if(!db)return;clearTimeout(pend[path]);pend[path]=setTimeout(async()=>{try{await db.doc(path).set(JSON.parse(JSON.stringify(obj)))}catch(e){}},700);}
+const saveDay=(k=todayKey())=>save('days/'+k,day(k));
+const saveState=()=>save('state/main',STATE);
+async function initCloud(){
+ try{db=await claude.use("db")}catch(e){db=null}
+ try{sample=await claude.use("sample")}catch(e){}
+ try{tts=await claude.use("tts")}catch(e){}
+ if(!db){render();return}
+ try{const c=val(await db.doc('config/main').get());applyCfg(c)}catch(e){}
+ try{db.doc('config/main').onSnapshot(s=>{applyCfg(val(s));render()})}catch(e){}
+ try{const s=val(await db.doc('state/main').get());if(s)STATE=Object.assign(STATE,s)}catch(e){}
+ try{const r=await db.collection('days').get();const arr=Array.isArray(r)?r:(r&&r.docs)||[];
+  arr.forEach(d=>{const id=d.id||(d.ref&&d.ref.id)||(d.path||'').split('/').pop();const v=val(d);if(id&&v)DAYS[id]=Object.assign({water:0,foods:[],done:[],weight:null},v)});}catch(e){}
+ lsSave();render();
+}
+
+// ================= МОТИВАЦИЯ =================
+// ===== ДИНАМИЧЕСКОЕ УПРАВЛЕНИЕ: Claude пишет в базу config/main, приложение подхватывает сразу =====
+// Поля config/main (все необязательные):
+//  cfg:{kcal,protein,water,goal,...}  msg:"текст"  schedule:[[время,текст]]
+//  ex:{ключ:{n,p,t,face?,sw?}}  rew:{ключ:[5 наград]}  wrew:{тренировка:[...]}
+//  workouts:{ключ:{n,d,rounds,warm,list:[[ex,work,rest]]}}  dayw:{1:'A',3:'B',5:'C'}  xpv:{ключ:xp}
+//  care:{am|pm:{n,t,steps:[[название,пояснение]],rew:[...]}}
+//  remove:{ex:[..],workouts:[..]}   cards:[{date?,dow?,emoji,title,text,task?:{label,action}}]
+//  tips:[строки]  missions:[{label,rew,dow?}]  — свои миссии (отмечаются нажатием)
+let CARDS=[],XM=[],TIPS=null;
+function applyCfg(c){if(!c)return;
+ ['start','goal','kcal','protein','water','glass','msg','schedule'].forEach(k=>{if(c[k]!==undefined)CFG[k]=c[k]});if(c.cfg)Object.assign(CFG,c.cfg);
+ if(c.ex)Object.assign(EX,c.ex);if(c.rew)Object.assign(REW,c.rew);if(c.wrew)Object.assign(WREW,c.wrew);
+ if(c.workouts)Object.assign(W,c.workouts);if(c.dayw){Object.keys(DAYW).forEach(k=>delete DAYW[k]);Object.assign(DAYW,c.dayw)}
+ if(c.xpv)Object.assign(XPV,c.xpv);if(c.care)Object.keys(c.care).forEach(k=>CARE[k]=Object.assign(CARE[k]||{},c.care[k]));
+ if(c.remove){(c.remove.workouts||[]).forEach(k=>delete W[k]);(c.remove.ex||[]).forEach(k=>delete EX[k])}
+ Object.keys(W).forEach(k=>W[k].list=W[k].list.filter(x=>EX[x[0]]));
+ CARDS=c.cards||[];XM=c.missions||[];if(c.reminders)REM=c.reminders;if(c.melodies)Object.assign(MEL,c.melodies);TIPS=c.tips||null;}
+function todayCards(){const k=todayKey(),dw=new Date().getDay();return CARDS.filter(c=>(!c.date||c.date===k)&&(c.dow==null||[].concat(c.dow).includes(dw)))}
+function cardsHtml(){const cs=todayCards();if(!cs.length)return'';const seen=(day().seen||[]);
+ return cs.map((c,i)=>`<div class="card coach"><h2>${c.emoji||'📌'} ${esc(c.title||'')}</h2><div style="line-height:1.45">${esc(c.text||'').replace(/\n/g,'<br>')}</div>${c.task?`<button onclick="${/^[\w'(),]+$/.test(c.task.action||'')?c.task.action:'go(\'home\')'};markCard('${esc(c.title)}')">${esc(c.task.label)}</button>`:''}</div>`).join('')}
+function markCard(t){const d=day();d.seen=d.seen||[];if(!d.seen.includes(t)){d.seen.push(t);saveDay()}}
+function xmTick(i){const d=day();d.xm=d.xm||{};d.xm[i]=!d.xm[i];saveDay();render()}
+function dayActive(d){return d&&((d.done||[]).length||d.water>=1000||(d.foods||[]).length)}
+function streak(){let n=0;const d=new Date();if(!dayActive(DAYS[todayKey()]))d.setDate(d.getDate()-1);
+ for(;;){const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');if(dayActive(DAYS[k])){n++;d.setDate(d.getDate()-1)}else break}return n}
+function totalXP(){let x=0;Object.values(DAYS).forEach(d=>{(d.done||[]).forEach(w=>x+=XPV[w.k]||10);x+=Math.floor((d.water||0)/CFG.glass)*2;x+=(d.foods||[]).length*3;['am','pm'].forEach(w=>{const c=(d.care||{})[w]||[];if(CARE[w].steps.every((_,j)=>c[j]))x+=5});if(d.weight)x+=10;});return x}
+const RANKS=["Новичок","Ученик","Боец","Воин","Атлет","Машина","Легенда"];
+function lvl(){const x=totalXP();const L=Math.floor(Math.sqrt(x/50));return{L,x,cur:50*L*L,next:50*(L+1)*(L+1),rank:RANKS[Math.min(RANKS.length-1,Math.floor(L/3))]}}
+function weights(){return Object.keys(DAYS).sort().filter(k=>DAYS[k].weight).map(k=>[k,DAYS[k].weight])}
+function curW(){const w=weights();return w.length?w[w.length-1][1]:CFG.start}
+function countDone(k){let n=0;Object.values(DAYS).forEach(d=>(d.done||[]).forEach(w=>{if(!k||k.includes(w.k))n++}));return n}
+function BADGES(){const lost=CFG.start-curW(),s=streak();return[
+ ["🔥","3 дня подряд",s>=3],["⚡","7 дней подряд",s>=7],["👑","30 дней подряд",s>=30],
+ ["💪","1-я тренировка",countDone(['A','B','C'])>=1],["🏋️","10 тренировок",countDone(['A','B','C'])>=10],["🦾","50 тренировок",countDone(['A','B','C'])>=50],
+ ["📉","−1 кг",lost>=1],["🎯","−5 кг",lost>=5],["🚀","−10 кг",lost>=10],["🏆","−20 кг",lost>=20],["🥇","Цель 90 кг",curW()<=CFG.goal],
+ ["😎","10× лицо",countDone(['face'])>=10],["💧","Норма воды ×7",Object.values(DAYS).filter(d=>d.water>=CFG.water).length>=7],["🪑","50 перерывов",countDone(['desk'])>=50]]}
+function missions(){const d=day(),dow=new Date().getDay(),m=[];
+ const has=k=>(d.done||[]).some(w=>w.k===k);
+ if(DAYW[dow])m.push([`Тренировка ${W[DAYW[dow]].n}`,has(DAYW[dow]),`start('${DAYW[dow]}')`,WREW[DAYW[dow]][0]+' · +60 XP']);
+ if(dow>=1&&dow<=5)m.push([`Перерывы у стола: ${(d.done||[]).filter(w=>w.k==='desk').length}/6`,(d.done||[]).filter(w=>w.k==='desk').length>=6,"start('desk')",MREW.desk]);
+ m.unshift(["Уход утром",careDone('am'),"careView('am')",CARE.am.rew[0]]);m.push(["Уход вечером",careDone('pm'),"careView('pm')",CARE.pm.rew[0]]);
+ m.push([`Вода: ${d.water}/${CFG.water} мл`,d.water>=CFG.water,"addWater()",MREW.water]);
+ const p=(d.foods||[]).reduce((a,f)=>a+(+f.p||0),0);m.push([`Белок: ${Math.round(p)}/${CFG.protein} г`,p>=CFG.protein,"go('food')",MREW.protein]);
+ m.push(["Вечер 15 мин",has('eve'),"start('eve')",WREW.eve[0]]);m.push(["Лицо и шея",has('face'),"start('face')",WREW.face[0]]);
+ if(dow===1||dow===4)m.push(["Взвешивание",!!d.weight,"go('prog')",MREW.weight]);
+ XM.forEach((x,i)=>{if(x.dow==null||[].concat(x.dow).includes(dow))m.push([esc(x.label),!!(d.xm||{})[i],`xmTick(${i})`,esc(x.rew||'')])});return m}
+function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(e._t);e._t=setTimeout(()=>e.style.display='none',2200)}
+
+
+// ================= НАПОМИНАНИЯ ВНУТРИ ПРИЛОЖЕНИЯ (работают, пока приложение открыто) =================
+// type: water|meal|move|train|care|weigh|face ; dow: дни недели (0=вс) ; Claude может заменить через config/main.reminders
+let REM=[
+ {t:"07:00",type:"alarm",text:"Подъём! Стакан воды",dow:[0,1,2,3,4,5,6]},
+ {t:"07:05",type:"weigh",text:"Взвешивание натощак",dow:[1,4],act:"go('prog')"},
+ {t:"07:10",type:"train",text:"Тренировка дня",dow:[1,3,5],act:"start(DAYW[new Date().getDay()])"},
+ {t:"07:50",type:"care",text:"Уход утром",act:"careView('am')"},
+ {t:"08:00",type:"meal",text:"Завтрак: белок 35–40 г"},
+ {t:"09:00",type:"water",text:"Стакан воды + перерыв 3 мин",dow:[1,2,3,4,5],act:"start('desk')"},
+ {t:"10:00",type:"water",text:"Стакан воды",dow:[1,2,3,4,5],act:"addWater()"},
+ {t:"10:30",type:"move",text:"Перерыв 3 мин у стола",act:"start('desk')"},
+ {t:"11:30",type:"water",text:"Стакан воды + перерыв",dow:[1,2,3,4,5],act:"start('desk')"},
+ {t:"12:30",type:"water",text:"Стакан воды",dow:[1,2,3,4,5],act:"addWater()"},
+ {t:"13:00",type:"meal",text:"Обед: белок + овощи"},
+ {t:"14:00",type:"water",text:"Зелёный чай или вода + перерыв",dow:[1,2,3,4,5],act:"start('desk')"},
+ {t:"15:00",type:"move",text:"Перерыв 3 мин",act:"start('desk')"},
+ {t:"16:00",type:"water",text:"Вода + перерыв, конец работы",dow:[1,2,3,4,5],act:"start('desk')"},
+ {t:"16:30",type:"meal",text:"Перекус: казеин / творог / йогурт"},
+ {t:"18:00",type:"train",text:"Вечер 15 мин",act:"start('eve')"},
+ {t:"19:30",type:"meal",text:"Ужин — последняя еда"},
+ {t:"21:00",type:"face",text:"Лицо и шея 6 мин",act:"start('face')"},
+ {t:"21:10",type:"care",text:"Уход вечером",act:"careView('pm')"}
+];
+const MEL={ // [частота, длительность мс] — разные мелодии
+ water:[[660,140],[880,140],[1175,260]],
+ meal:[[523,200],[659,200],[784,200],[659,300]],
+ move:[[784,120],[784,120],[988,240]],
+ train:[[523,120],[659,120],[784,120],[1047,180],[784,120],[1047,400]],
+ care:[[1319,350],[988,350],[1319,500]],
+ weigh:[[440,200],[554,200],[659,400]],
+ face:[[880,220],[740,220],[880,400]],
+ alarm:[[880,180],[0,80],[880,180],[0,80],[880,180],[0,300],[880,180],[0,80],[880,180],[0,80],[880,300]]
+};
+const REMICON={water:"💧",meal:"🍽",move:"🪑",train:"💪",care:"✨",weigh:"⚖️",face:"😎",alarm:"⏰"};
+function melody(type,vol=.25){try{const a=window._ac||(window._ac=new (window.AudioContext||window.webkitAudioContext)());a.resume&&a.resume();let t=a.currentTime+.05;
+ (MEL[type]||MEL.water).forEach(([f,ms])=>{if(f){const o=a.createOscillator(),g=a.createGain();o.type=type==='alarm'?'square':'sine';o.frequency.value=f;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.02);g.gain.exponentialRampToValueAtTime(.001,t+ms/1000);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+ms/1000+.05)}t+=ms/1000+.03})}catch(e){}}
+let REMON=false,REMFIRED={},SNOOZE=[];
+function remToggle(){REMON=!REMON;try{localStorage.setItem('remon',REMON?'1':'')}catch(e){}if(REMON){melody('water');try{navigator.wakeLock&&navigator.wakeLock.request('screen').then(l=>window._wl=l).catch(()=>{})}catch(e){}toast('🔔 Напоминания включены')}render()}
+function remTick(){if(!REMON||IS_APP)return;const d=new Date(),hm=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'),dw=d.getDay(),key=todayKey();
+ REM.forEach((r,i)=>{const id=key+i;if(r.t===hm&&(!r.dow||r.dow.includes(dw))&&!REMFIRED[id]){REMFIRED[id]=1;fire(r)}});
+ SNOOZE=SNOOZE.filter(s=>{if(Date.now()>=s.at){fire(s.r);return false}return true})}
+function fire(r){melody(r.type);const b=$('rembox');
+ b.innerHTML=`<div class="card coach" style="margin:0"><div class="big">${REMICON[r.type]||'🔔'} ${r.t||''}</div><div style="font-size:19px;margin:6px 0">${esc(r.text)}</div>${REW&&r.type==='water'?`<div class="mut">${MREW.water}</div>`:''}
+ <div class="row"><button onclick="remDo(${REM.indexOf(r)})">${r.act?'Сделать':'Готово'}</button><button class="sec" onclick="remLater(${REM.indexOf(r)})">Через 10 мин</button></div></div>`;b.style.display='block'}
+function remDo(i){$('rembox').style.display='none';const r=REM[i];if(r&&r.type==='water'&&!/addWater/.test(r.act||''))addWater();if(r&&r.act){try{(new Function(r.act))()}catch(e){}}}
+function remLater(i){$('rembox').style.display='none';SNOOZE.push({at:Date.now()+600000,r:REM[i]})}
+function nextRem(){const d=new Date(),dw=d.getDay(),now=d.getHours()*60+d.getMinutes();return REM.filter(r=>(!r.dow||r.dow.includes(dw))).map(r=>{const[h,m]=r.t.split(':').map(Number);return[h*60+m,r]}).filter(x=>x[0]>now).sort((a,b)=>a[0]-b[0])[0]}
+setInterval(remTick,15000);
+
+
+// ===== Android: виджет, системные напоминания, обновления, отчёт =====
+const IS_APP=!!window.Android;
+function pushNative(){if(!IS_APP)return;try{
+ const m=missions(),n=nextRem(),cs=todayCards();
+ Android.widget(JSON.stringify({date:todayKey(),done:m.filter(x=>x[1]).length,total:m.length,streak:streak(),
+  next:n?`Далее ${n[1].t} ${REMICON[n[1].type]} ${n[1].text}`:'На сегодня напоминаний больше нет',
+  card:cs[0]?`${cs[0].emoji||'📌'} ${cs[0].title}`:'',items:m.slice(0,7).map(x=>({l:x[0].replace(/<[^>]+>/g,''),d:!!x[1],a:x[2]}))}));
+ Android.setReminders(JSON.stringify(REM));}catch(e){}}
+window.__update=(v)=>{window.__upd=v;render()};
+function report(){const ks=Object.keys(DAYS).sort().slice(-7);let t=`Отчёт NagiHealth для Claude\nВес: старт ${CFG.start}, сейчас ${curW()} кг. Серия ${streak()} дн. Уровень нагрузки ${STATE.level||0}.\n`;
+ ks.forEach(k=>{const d=DAYS[k];const kc=(d.foods||[]).reduce((a,f)=>a+(+f.kcal||0),0),p=(d.foods||[]).reduce((a,f)=>a+(+f.p||0),0);
+  t+=`${k}: ${d.weight?'вес '+d.weight+', ':''}вода ${d.water} мл, ${Math.round(kc)} ккал/${Math.round(p)} г белка, сделано: ${(d.done||[]).map(w=>w.k+(w.fb!=null?'('+(w.fb>0?'легко':w.fb<0?'тяжело':'норм')+')':'')).join(', ')||'—'}\n`});
+ Android.share(t)}
+// Простая база продуктов на 100 г: [ккал, белок]
+const FOODDB={"овсянка сухая":[370,13],"гречка сухая":[340,13],"рис сухой":[350,7],"чечевица сухая":[330,24],"нут сухой":[360,19],"фасоль консерв.":[90,6],
+ "творог 5%":[121,17],"творог 9%":[159,17],"творог 0%":[71,16],"яйцо (1 шт ~55 г)":[143,13],"греческий йогурт 2%":[66,9],"кефир 1%":[40,3],"молоко 2.5%":[52,3],
+ "сыр твёрдый":[350,25],"моцарелла":[280,22],"тофу":[120,13],"казеин (порошок)":[360,80],"сывороточный протеин":[380,75],"семена чиа":[490,17],
+ "грибы шампиньоны":[27,4],"овощи свежие":[25,1],"овощная смесь зам.":[40,2],"картофель":[77,2],"банан":[90,1],"яблоко":[52,0],"ягоды":[45,1],
+ "хлеб цельнозерновой":[245,9],"орехи":[600,18],"арахисовая паста":[590,25],"масло растительное":[899,0],"масло сливочное":[748,1],"мёд":[320,0],"шоколад тёмный":[540,6],"макароны сухие":[350,12]};
+function addFoodLocal(){const n=$('fdb').value.trim(),g=+$('fg').value;const f=FOODDB[n];if(!f||!g){toast('Выбери продукт и вес');return}
+ day().foods.push({name:n,g,kcal:f[0]*g/100,p:f[1]*g/100});saveDay();toast(`+${Math.round(f[0]*g/100)} ккал`);render()}
+
+// ================= ЭКРАНЫ =================
+const $=id=>document.getElementById(id);let TAB='home';
+function go(t){TAB=t;if(location.hash==='#today')history.replaceState(null,'',location.pathname+location.search);render();scrollTo(0,0)}
+function nav(){$('nav').innerHTML=[['home','🏠','Сегодня'],['train','💪','Тренировки'],['food','🥗','Еда'],['prog','📈','Прогресс']].map(([k,i,n])=>`<button class="${TAB===k?'on':''}" onclick="go('${k}')"><b>${i}</b>${n}</button>`).join('')}
+function ring(p,txt){const r=40,c=2*Math.PI*r;return `<svg class="ring" viewBox="0 0 96 96"><circle cx="48" cy="48" r="${r}" stroke="#232838" stroke-width="9" fill="none"/><circle cx="48" cy="48" r="${r}" stroke="url(#g)" stroke-width="9" fill="none" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${c*(1-Math.min(1,p))}" transform="rotate(-90 48 48)"/><defs><linearGradient id="g"><stop offset="0" stop-color="#ff7a2f"/><stop offset="1" stop-color="#ffb347"/></linearGradient></defs><text x="48" y="54" text-anchor="middle" fill="#f1f3f8" font-size="18" font-weight="800">${txt}</text></svg>`}
+function home(){const w=curW(),lost=CFG.start-w,need=CFG.start-CFG.goal,l=lvl(),s=streak(),m=missions(),d=day();
+ const kc=(d.foods||[]).reduce((a,f)=>a+(+f.kcal||0),0);
+ return `<div class="row" style="margin-bottom:10px"><div><h1>Привет, чемпион 👊</h1><div class="mut">${new Date().toLocaleDateString('ru-RU',{weekday:'long',day:'numeric',month:'long'})}</div></div><div style="flex:none;text-align:right"><div class="big">🔥${s}</div><div class="mut">дней подряд</div></div></div>
+ <div class="card"><div class="hero">${ring(lost/need,(lost>0?'−':'')+lost.toFixed(1))}<div><div class="mut">Путь ${CFG.start} → ${CFG.goal} кг</div><div class="big">${w} кг</div><div class="mut">осталось ${(w-CFG.goal).toFixed(1)} кг · ${Math.round(100*lost/need)}%</div></div></div>
+ <div style="margin-top:12px" class="row"><div><b>Ур. ${l.L} · ${l.rank}</b><div class="bar"><i style="width:${100*(l.x-l.cur)/(l.next-l.cur)}%"></i></div></div><div style="flex:none" class="mut">${l.x} XP</div></div></div>
+ <div class="card coach"><h2>💬 Тренер Claude</h2><div style="line-height:1.45">${CFG.msg}</div>${STATE.why?`<div class="mut" style="margin-top:8px">Твоё «зачем»: <b style="color:var(--fg)">${esc(STATE.why)}</b></div>`:''}
+ ${sample?`<button class="sec" onclick="sos()">😩 Нет сил / хочу сорваться</button><div class="chat" id="sosout"></div>`:''}</div>
+ ${remCard()}
+ ${cardsHtml()}
+ <div class="card"><h2>🎯 Миссии на сегодня</h2>${m.map(x=>`<div class="mission ${x[1]?'done':''}" onclick="${x[2]}"><div class="chk">${x[1]?'✓':''}</div><div><span>${x[0]}</span><div class="mut" style="font-size:13px">🎁 ${x[3]}</div></div></div>`).join('')}<div id="careout"></div></div>
+ <div class="card"><div class="row"><h2 style="margin:0">💧 Вода</h2><div style="flex:none" class="mut">${d.water} / ${CFG.water} мл</div></div>
+ <div class="water">${Array.from({length:Math.ceil(CFG.water/CFG.glass)},(_,i)=>`<span class="drop ${i<d.water/CFG.glass?'f':''}">💧</span>`).join('')}</div>
+ <div class="row"><button onclick="addWater()">+ стакан ${CFG.glass} мл</button><button class="sec" style="flex:none;width:auto" onclick="addWater(-1)">−</button></div></div>
+ <div class="card"><div class="row"><h2 style="margin:0">🍽 Калории</h2><div style="flex:none" class="mut">${Math.round(kc)} / ${CFG.kcal}</div></div><div class="bar"><i style="width:${Math.min(100,100*kc/CFG.kcal)}%;${kc>CFG.kcal?'background:var(--bad)':''}"></i></div><button class="sec" onclick="go('food')">Записать еду</button></div>
+ <div class="card"><h2>🗓 Расписание</h2><table>${CFG.schedule.map(r=>`<tr><td class="mut" style="width:110px">${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</table></div>`}
+function train(){const td=DAYW[new Date().getDay()];const lv=STATE.level||0;
+ let h=`<h1>💪 Тренировки</h1><div class="mut" style="margin-bottom:10px">Уровень нагрузки: <b style="color:var(--fg)">${lv>=0?'+':''}${lv}</b> · растёт сам после тренировок с оценкой «легко»</div>`;
+ h+=`<div class="card"><h2>⏱ Как это работает</h2><div class="mut" style="line-height:1.45">Нажми «Начать» — пойдёт таймер с анимированной картинкой, голосом и сигналами: 3 коротких писка перед концом, длинный при смене. Или выбери любое упражнение внизу и задай свои подходы.</div></div>`;
+ ['A','B','C','desk','eve','face'].forEach(k=>{const w=W[k];if(!w)return;const lib=[...new Set(w.list.map(x=>x[0]))];
+  h+=`<div class="card ${k===td?'today':''}"><h2>${k===td?'⭐ Сегодня · ':''}${w.n}</h2><div class="mut">${w.d} · ~${mins(k)} мин · +${XPV[k]||10} XP</div>
+  <div style="margin:6px 0">${lib.map(x=>`<span class="pill">${EX[x].n}</span>`).join('')}</div>${rewList(WREW[k])}
+  <div class="row"><button onclick="start('${k}')">Начать</button>${w.rounds>1?`<button class="sec" onclick="start('${k}',1)">Лёгкий</button>`:''}</div></div>`;});
+ h+=`<div class="card"><h2>📖 Все упражнения</h2><div class="lib">${Object.keys(EX).filter(k=>!['warm','cool'].includes(k)).map(k=>`<div onclick="openEx('${k}')"><span class="anim" data-k="${k}"></span>${EX[k].n}</div>`).join('')}</div><div id="exinfo"></div></div>`;return h}
+function openEx(k){const e=EX[k];$('exinfo').innerHTML=`<div class="card" style="margin-top:10px;background:#0f1219"><h2>${e.n}</h2><div class="fig" id="exfig" data-k="${k}">${svg(e,0)}</div><div style="line-height:1.45">${esc(e.t)}</div>
+ <div class="row" style="margin-top:10px"><div><div class="mut">Подходов</div><input id="xs" type="number" value="3" min="1" max="10"></div><div><div class="mut">Работа, сек</div><input id="xw" type="number" value="40" min="10"></div><div><div class="mut">Отдых, сек</div><input id="xr" type="number" value="30" min="5"></div></div>
+ <button onclick="startOne('${k}')">▶ Запустить таймер</button>${rewList(REW[k])}</div>`;$('exinfo').scrollIntoView({behavior:'smooth'})}
+function food(){const d=day();const kc=d.foods.reduce((a,f)=>a+(+f.kcal||0),0),p=d.foods.reduce((a,f)=>a+(+f.p||0),0);
+ const fav={};Object.values(DAYS).forEach(x=>(x.foods||[]).forEach(f=>{const k=f.name+'|'+f.g;fav[k]=fav[k]||Object.assign({c:0},f);fav[k].c++}));
+ const favs=Object.values(fav).sort((a,b)=>b.c-a.c).slice(0,10);
+ return `<h1>🥗 Еда</h1>
+ <div class="card"><div class="row"><div><div class="mut">Калории</div><div class="big">${Math.round(kc)}<span class="mut" style="font-size:16px"> / ${CFG.kcal}</span></div></div><div><div class="mut">Белок</div><div class="big">${Math.round(p)}<span class="mut" style="font-size:16px"> / ${CFG.protein} г</span></div></div></div>
+ <div class="bar"><i style="width:${Math.min(100,100*kc/CFG.kcal)}%;${kc>CFG.kcal?'background:var(--bad)':''}"></i></div><div class="bar"><i style="width:${Math.min(100,100*p/CFG.protein)}%;background:var(--ok)"></i></div>
+ <div class="mut" style="margin-top:6px">${kc>CFG.kcal?'Лимит превышен — не страшно, завтра ровнее.':`Осталось ${Math.round(CFG.kcal-kc)} ккал · белка ${Math.max(0,Math.round(CFG.protein-p))} г`}</div></div>
+ <div class="card"><h2>➕ Добавить</h2><div class="mut">Взвесь на весах и напиши как есть, например: «овсянка сухая 60 г, молоко 200 мл, казеин 30 г»</div>
+ <textarea id="fin" rows="2" placeholder="что и сколько грамм"></textarea>
+ ${sample?`<button onclick="addFood()" id="fbtn">🤖 Посчитать и записать</button>`:`<div class="mut" style="margin-top:8px">Продукт из базы + вес на весах:</div><input id="fdb" list="fdbl" placeholder="начни вводить: творог, гречка…"><datalist id="fdbl">${Object.keys(FOODDB).map(k=>`<option value="${k}">`).join('')}</datalist><div class="row"><input id="fg" type="number" inputmode="decimal" placeholder="грамм"><button style="flex:none;width:auto;margin:0" onclick="addFoodLocal()">Добавить</button></div><div class="mut" style="margin-top:10px">Нет в базе — введи вручную (название в поле выше):</div><div class="row"><input id="fk" placeholder="ккал" type="number"><input id="fp" placeholder="белок г" type="number"></div><button onclick="addFoodManual()">Записать</button>`}
+ ${favs.length?`<div class="mut" style="margin-top:10px">Частое — одним нажатием:</div>${favs.map((f,i)=>`<button class="sec sm" onclick='quickFood(${JSON.stringify({name:f.name,g:f.g,kcal:f.kcal,p:f.p})})'>${esc(f.name)} ${f.g}г</button>`).join('')}`:''}</div>
+ <div class="card"><h2>Сегодня</h2>${d.foods.length?`<table>${d.foods.map((f,i)=>`<tr><td>${esc(f.name)} <span class="mut">${f.g} г</span></td><td style="text-align:right">${Math.round(f.kcal)} ккал · ${Math.round(f.p)} б <span onclick="delFood(${i})" style="color:var(--bad);padding-left:8px">✕</span></td></tr>`).join('')}</table>`:'<div class="mut">Пока пусто</div>'}</div>
+ <div class="card"><h2>💡 Советы</h2><ul style="padding-left:18px;line-height:1.5;margin:0">${TIPS?TIPS.map(t=>`<li>${esc(t)}</li>`).join('')+'</ul></div>':''}<!--def-->${TIPS?'<ul style="display:none">':''}
+ <li>Белок в каждый приём: творог, яйца, греческий йогурт, казеин, сыр, тофу, чечевица, нут.</li>
+ <li>Полтарелки — овощи и грибы: объём без калорий.</li><li>Взвешивай крупы сухими, а масло — всегда: 1 ложка = 90–120 ккал.</li>
+ <li>Чиа и орехи полезны, но калорийны — до 20–30 г.</li><li>Зелёный чай — отличная замена сладким напиткам, но сам по себе почти не сжигает жир. Без сахара, до 3–4 чашек, не на ночь.</li>
+ <li>Хочется сладкого — сначала стакан воды и подожди 10 минут.</li></ul></div>`}
+function prog(){const ws=weights(),l=lvl(),b=BADGES();
+ let chart='';if(ws.length>1){const vs=ws.map(x=>x[1]),mn=Math.min(...vs,CFG.goal)-1,mx=Math.max(...vs)+1;const X=i=>10+300*i/(ws.length-1),Y=v=>10+130*(mx-v)/(mx-mn);
+  chart=`<svg viewBox="0 0 320 150" style="width:100%"><line x1="10" x2="310" y1="${Y(CFG.goal)}" y2="${Y(CFG.goal)}" stroke="#35d49a" stroke-dasharray="4"/><polyline fill="none" stroke="#ff7a2f" stroke-width="3" points="${ws.map((x,i)=>X(i)+','+Y(x[1])).join(' ')}"/>${ws.map((x,i)=>`<circle cx="${X(i)}" cy="${Y(x[1])}" r="3.5" fill="#ffb347"/>`).join('')}</svg>`}
+ return `<h1>📈 Прогресс</h1>
+ <div class="card"><h2>⚖️ Вес</h2><div class="row"><input id="w" type="number" step="0.1" inputmode="decimal" placeholder="кг натощак"><button style="flex:none;width:auto;margin:0" onclick="addW()">Записать</button></div>${chart}
+ <table>${ws.slice(-8).reverse().map(x=>`<tr><td class="mut">${x[0]}</td><td style="text-align:right"><b>${x[1]} кг</b></td></tr>`).join('')||`<tr><td class="mut">Старт</td><td style="text-align:right"><b>${CFG.start} кг</b></td></tr>`}</table></div>
+ <div class="card"><h2>🏅 Достижения ${b.filter(x=>x[2]).length}/${b.length}</h2>${b.map(x=>`<div class="badge ${x[2]?'got':''}"><b>${x[0]}</b>${x[1]}</div>`).join('')}</div>
+ <div class="card"><h2>📊 Итого</h2><div class="pill">Тренировок: ${countDone(['A','B','C'])}</div><div class="pill">Перерывов: ${countDone(['desk'])}</div><div class="pill">Лицо: ${countDone(['face'])}</div><div class="pill">Уровень ${l.L} · ${l.x} XP</div><div class="pill">Лучшая серия: ${streak()} дн</div></div>
+ ${IS_APP?`<div class="card"><h2>📤 Отчёт для Claude</h2><div class="mut">Отправь в чат Claude — я разберу неделю и поправлю программу.</div><button onclick="report()">Отправить отчёт</button><button class="sec" onclick="Android.checkUpdate()">Проверить обновления · версия 1.${Android.version()}</button></div>`:''}<div class="card"><h2>❤️ Моё «зачем»</h2><div class="mut">Ради чего ты это делаешь? Это будет на главном экране.</div><textarea id="why" rows="2">${esc(STATE.why||'')}</textarea><button class="sec" onclick="STATE.why=$('why').value;saveState();toast('Сохранено')">Сохранить</button></div>`}
+function remCard(){const n=nextRem();if(IS_APP)return `${window.__upd?`<div class="card today"><h2>🚀 Доступна версия ${window.__upd}</h2><button onclick="Android.checkUpdate()">Обновить</button></div>`:''}<div class="card"><h2 style="margin:0">🔔 Напоминания включены</h2><div class="mut">Системные, со своими мелодиями — работают даже при закрытом приложении. ${n?`Следующее в ${n[1].t}: ${REMICON[n[1].type]} ${esc(n[1].text)}`:''}</div><details style="margin-top:8px"><summary class="mut">Послушать звуки</summary>${Object.keys(MEL).map(k=>`<button class="sec sm" onclick="melody('${k}')">${REMICON[k]} ${k}</button>`).join('')}</details></div>`;return `<div class="card"><div class="row"><div><h2 style="margin:0">🔔 Напоминания со звуком</h2><div class="mut">${REMON?(n?`Следующее в ${n[1].t}: ${REMICON[n[1].type]} ${esc(n[1].text)}`:'На сегодня всё'):'Работают, пока приложение открыто'}</div></div><button style="flex:none;width:auto;margin:0" class="${REMON?'sec':''}" onclick="remToggle()">${REMON?'Выкл':'Вкл'}</button></div>
+ <details style="margin-top:8px"><summary class="mut">Послушать звуки</summary>${Object.keys(MEL).map(k=>`<button class="sec sm" onclick="melody('${k}')">${REMICON[k]} ${{water:'вода',meal:'еда',move:'перерыв',train:'тренировка',care:'уход',weigh:'вес',face:'лицо',alarm:'будильник'}[k]}</button>`).join('')}</details></div>`}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function mini(){const m=missions(),dn=m.filter(x=>x[1]).length,n=nextRem(),d=day();
+ return `<div class="row"><h1>✅ Сегодня ${dn}/${m.length}</h1><div style="flex:none" class="big">🔥${streak()}</div></div>
+ ${n?`<div class="mut" style="margin-bottom:8px">Следующее: ${n[1].t} ${REMICON[n[1].type]} ${esc(n[1].text)}</div>`:''}
+ <div class="card">${m.map(x=>`<div class="mission ${x[1]?'done':''}" onclick="${x[2]}" style="padding:13px 0;font-size:17px"><div class="chk" style="width:30px;height:30px">${x[1]?'✓':''}</div><span>${x[0]}</span></div>`).join('')}<div id="careout"></div></div>
+ <div class="row"><button onclick="addWater()">💧 +стакан (${d.water})</button><button class="sec" onclick="start('desk')">🪑 Перерыв</button></div>
+ ${todayCards().map(c=>`<div class="card coach" style="margin-top:12px"><b>${c.emoji||'📌'} ${esc(c.title||'')}</b><div class="mut" style="margin-top:4px">${esc(c.text||'').replace(/\n/g,'<br>')}</div></div>`).join('')}
+ <button class="sec" onclick="location.hash='';go('home')">Открыть всё приложение</button>`}
+function render(){pushNative();if($('player').style.display==='block')return;const isMini=location.hash==='#today';$('app').innerHTML=isMini?mini():{home,train,food,prog}[TAB]();$('nav').style.display=isMini?'none':'flex';if(!isMini)nav()}
+addEventListener('hashchange',render);setInterval(()=>{if(IS_APP)pushNative()},60000);
+
+// ================= ДЕЙСТВИЯ =================
+function addWater(n=1){const d=day();d.water=Math.max(0,d.water+n*CFG.glass);saveDay();if(n>0)toast(d.water>=CFG.water?'💧 Норма воды выполнена! +2 XP':'💧 +2 XP');render()}
+function addW(){const v=parseFloat($('w').value);if(!v)return;const prev=curW();day().weight=v;saveDay();toast(v<prev?`📉 −${(prev-v).toFixed(1)} кг! Так держать`:'Записано. Важен тренд, не один день');render()}
+function delFood(i){day().foods.splice(i,1);saveDay();render()}
+function quickFood(f){day().foods.push(f);saveDay();toast('+ '+f.name);render()}
+function addFoodManual(){const k=+$('fk').value,p=+$('fp').value;if(!k)return;day().foods.push({name:$('fin').value||'Еда',g:0,kcal:k,p:p||0});saveDay();render()}
+async function addFood(){const t=$('fin').value.trim();if(!t)return;const b=$('fbtn');b.disabled=true;b.textContent='Считаю…';
+ try{const r=await sample.json(`Ты нутрициолог. Пользователь-вегетарианец (без мяса) взвесил еду. Разбери текст на продукты и посчитай по стандартным таблицам (крупы — сухой вес, если не сказано иное). Текст: «${t}». Верни только JSON: {"items":[{"name":"короткое название по-русски","g":число_грамм_или_мл,"kcal":число,"p":белок_г}]}`,{modelTier:'quick'});
+  const items=(r&&r.items)||[];items.forEach(i=>day().foods.push({name:String(i.name),g:+i.g||0,kcal:+i.kcal||0,p:+i.p||0}));saveDay();toast(`+${Math.round(items.reduce((a,i)=>a+(+i.kcal||0),0))} ккал`);render();}
+ catch(e){b.disabled=false;b.textContent='Не вышло, попробуй ещё';}}
+async function sos(){const o=$('sosout');o.textContent='…';const d=day();
+ try{await sample(`Ты — тёплый, но прямой тренер Claude. Мужчина 37 лет, Украина (война, мало возможностей), худеет с ${CFG.start} до ${CFG.goal} кг, сейчас ${curW()} кг, серия ${streak()} дней, уровень ${lvl().L}. Его «зачем»: «${STATE.why||'не указано'}». Сегодня: вода ${d.water} мл, тренировок ${(d.done||[]).length}. Ему сейчас тяжело и хочется всё бросить. Ответь по-русски 4–6 предложениями: признай чувство, напомни прогресс и зачем, предложи ОДНО маленькое действие на ближайшие 5 минут. Без морали и без медицинских советов.`,{onText:({text})=>o.textContent=text});}
+ catch(e){o.textContent='Сделай сейчас одно: стакан воды и 3-минутный перерыв. Маленький шаг тоже шаг. Я в тебя верю.'}}
+
+// ================= ДВИЖОК ТРЕНИРОВКИ =================
+function build(key,light){const w=W[key],s=[],lv=key==='desk'||key==='face'?0:(STATE.level||0);const r=Math.max(1,(light?w.rounds-1:w.rounds)+(lv>=4?1:0));
+ if(w.warm)s.push({k:'warm',d:w.warm,ph:'work'});
+ for(let i=1;i<=r;i++)w.list.forEach(([k,d,rst],j)=>{s.push({k,d:Math.max(15,d+3*lv),ph:'work',info:r>1?(w.list.length===1?`Подход ${i}/${r}`:`Круг ${i}/${r}`):''});if(rst&&!(i===r&&j===w.list.length-1))s.push({k:'rest',d:Math.max(10,rst-2*lv),ph:'rest'});});
+ if(w.warm)s.push({k:'cool',d:180,ph:'work'});return s}
+function startOne(k){const n=Math.max(1,+$('xs').value||3),w=Math.max(10,+$('xw').value||40),r=Math.max(5,+$('xr').value||30);
+ W._one={n:EX[k].n,d:'',rounds:n,warm:0,list:[[k,w,r]]};XPV._one=Math.min(30,5*n);start('_one')}
+function mins(k){return Math.round(build(k).reduce((a,b)=>a+b.d,0)/60)}
+let steps=[],idx=0,left=0,timer=null,paused=false,cur=null,curKey=null;
+function say(t){if(tts){tts.speak(t,{language:'ru'}).catch(()=>sayLocal(t));return}sayLocal(t)}
+function sayLocal(t){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='ru-RU';speechSynthesis.speak(u)}catch(e){}}
+function beep(f=880,ms=150){try{const a=window._ac||(window._ac=new (window.AudioContext||window.webkitAudioContext)());const o=a.createOscillator(),g=a.createGain();o.frequency.value=f;o.connect(g);g.connect(a.destination);g.gain.value=.2;o.start();o.stop(a.currentTime+ms/1000)}catch(e){}}
+const label=st=>st.k==='rest'?'Отдых':EX[st.k].n;
+function start(k,light){curKey=k;steps=build(k,light);idx=-1;$('app').style.display='none';$('nav').style.display='none';$('player').style.display='block';$('fbk').innerHTML='';$('pctl').style.display='flex';scrollTo(0,0);try{navigator.wakeLock&&navigator.wakeLock.request('screen').catch(()=>{})}catch(e){}beep();show({k:'rest',d:8,ph:'rest',ready:1})}
+function show(st){cur=st;left=st.d;paused=false;$('pb').textContent='Пауза';const nx=steps[idx+1];
+ $('phase').textContent=st.ready?'Готовься':(st.ph==='rest'?'Отдых':'Работа');$('phase').style.color=st.ph==='rest'?'var(--rest)':'var(--ok)';
+ const e=EX[st.ph==='rest'&&nx?nx.k:st.k];
+ $('ex').textContent=st.ph==='rest'?(nx?'Дальше: '+label(nx):''):label(st);
+ $('info').textContent=[st.info,st.ph==='work'?st.d+' сек':'',`${Math.min(steps.length,idx+2)}/${steps.length}`].filter(Boolean).join(' · ');
+ $('fig').innerHTML=e?svg(e,0):'';const ek=st.ph==='rest'&&nx?nx.k:st.k;$('cue').innerHTML=(e?esc(e.t):'')+(st.ph==='rest'||st.ready?rewList(REW[ek]):(REW[ek]?`<div style="margin-top:8px;color:var(--acc2)">${REW[ek][(idx>0?idx:0)%5]}</div>`:''));
+ if(st.ready)say('Поехали! Первое: '+label(nx));else if(st.ph==='rest')say('Отдых. Дальше '+(nx?label(nx):'')+'. '+(REW[ek]?REW[ek][idx%5].replace(/[^\p{L}\p{N}\s.,:+–−%-]/gu,''):''));else say(label(st)+'. '+e.t);
+ tick();clearInterval(timer);timer=setInterval(()=>{if(paused)return;left--;if(left<=3&&left>0)beep(660,90);if(EX[cur.k]&&EX[cur.k].sw&&left===Math.floor(cur.d/2))say('Смени сторону');tick();if(left<=0)nextStep()},1000)}
+function tick(){$('time').textContent=left>=60?Math.floor(left/60)+':'+String(left%60).padStart(2,'0'):left;$('pbar').style.width=(100*(1-left/cur.d))+'%'}
+function nextStep(){beep(990,250);idx++;if(idx>=steps.length){finish();return}show(steps[idx])}
+function togglePause(){paused=!paused;$('pb').textContent=paused?'Продолжить':'Пауза'}
+function finish(){clearInterval(timer);cur=null;const xp=XPV[curKey]||10;day().done.push({k:curKey,t:new Date().toTimeString().slice(0,5)});saveDay();
+ say('Готово! Отличная работа. Плюс '+xp+' очков.');$('phase').textContent='Готово';$('ex').textContent='🎉 +'+xp+' XP';$('fig').innerHTML='';$('time').textContent='✓';$('info').textContent='Серия: 🔥 '+streak()+' дн';$('cue').textContent='Выпей воды. Как было?';$('pctl').style.display='none';
+ $('fbk').innerHTML=['A','B','C','eve'].includes(curKey)?`<div class="row"><button class="sec" onclick="fb(1)">😎 Легко</button><button class="sec" onclick="fb(0)">👍 Норм</button><button class="sec" onclick="fb(-1)">🥵 Тяжело</button></div>`:''}
+function fb(v){const d=day();d.done[d.done.length-1].fb=v;saveDay();STATE.level=Math.max(-3,Math.min(10,(STATE.level||0)+v));saveState();toast(v>0?'Следующая будет чуть сложнее 💪':v<0?'Чуть облегчу следующую':'Оставляю как есть');stop()}
+function stop(){clearInterval(timer);cur=null;try{speechSynthesis.cancel();tts&&tts.stop()}catch(e){}$('player').style.display='none';$('app').style.display='block';$('nav').style.display='flex';render()}
+let T0=performance.now();setInterval(()=>{const t=(1-Math.cos((performance.now()-T0)/2400*2*Math.PI))/2;document.querySelectorAll('.anim').forEach(e=>e.innerHTML=svg(EX[e.dataset.k],t));const ei=$('exfig');if(ei)ei.innerHTML=svg(EX[ei.dataset.k],t);if(cur&&cur.ph==='work'&&!paused)$('fig').innerHTML=svg(EX[cur.k],t)},60);
+
+lsLoad();try{REMON=!!localStorage.getItem('remon')}catch(e){}render();initCloud();
+</script>
+</body>
+</html>
