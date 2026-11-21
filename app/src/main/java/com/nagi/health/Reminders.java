@@ -77,6 +77,10 @@ public class Reminders {
     }
 
     static boolean dayOk(JSONObject o, Calendar cal) {
+        String key = String.format(java.util.Locale.US, "%04d-%02d-%02d", cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH));
+        String from = o.optString("from", ""), until = o.optString("until", "");
+        if (!from.isEmpty() && key.compareTo(from) < 0) return false;
+        if (!until.isEmpty() && key.compareTo(until) > 0) return false;
         JSONArray d = o.optJSONArray("dow");
         if (d == null || d.length() == 0) return true;
         int js = cal.get(Calendar.DAY_OF_WEEK) - 1; // JS: 0=вс
@@ -94,7 +98,7 @@ public class Reminders {
         cal.set(Calendar.SECOND, 0); cal.set(Calendar.MILLISECOND, 0);
         cal.set(Calendar.HOUR_OF_DAY, h); cal.set(Calendar.MINUTE, m);
         long now = System.currentTimeMillis();
-        for (int k = 0; k < 8; k++) {
+        for (int k = 0; k < 400; k++) {
             if (cal.getTimeInMillis() > now + 1000 && dayOk(o, cal)) return cal.getTimeInMillis();
             cal.add(Calendar.DAY_OF_MONTH, 1);
         }
